@@ -1,6 +1,6 @@
 # Duel de Dame
 
-Un jeu de dames moderne, jouable en ligne avec un ami, développé avec Next.js et TypeScript.
+Un jeu de dames moderne, jouable en ligne avec un ami, développé avec Next.js (front) et NestJS (API temps réel) en TypeScript.
 
 ## 🎮 Fonctionnalités
 
@@ -11,35 +11,46 @@ Un jeu de dames moderne, jouable en ligne avec un ami, développé avec Next.js 
 - Jouable à deux en ligne (temps réel)
 - Interface moderne et responsive
 
-## 🚀 Installation
+## 🚀 Installation & Lancement
 
-1. Clone le repository :
+1. **Clone le repository :**
 ```bash
 git clone [URL_DU_REPO]
 cd duel-de-dame
 ```
 
-2. Installe les dépendances :
+2. **Installe toutes les dépendances :**
 ```bash
 npm install
 ```
 
-3. Installe la dépendance serveur pour le multijoueur :
-```bash
-npm install socket.io
-```
+3. **Configure les variables d'environnement :**
+Crée un fichier `.env` à la racine (voir exemple plus bas).
 
-4. Lance le serveur Socket.IO (pour le mode en ligne) :
-```bash
-npm run start:server
-```
-
-5. Dans un autre terminal, lance le front Next.js :
+4. **Lance le projet en mode développement (front + back) :**
 ```bash
 npm run dev
 ```
+- Le front Next.js sera dispo sur [http://localhost:3000](http://localhost:3000)
+- L'API temps réel NestJS (Socket.IO) tournera sur [http://localhost:3001](http://localhost:3001)
 
-6. Ouvre [http://localhost:3000](http://localhost:3000) dans ton navigateur.
+### Scripts utiles
+- `npm run dev:front` : Lance uniquement le front Next.js
+- `npm run dev:back` : Lance uniquement le backend NestJS (API temps réel)
+- `npm run build` : Build front + back pour la prod
+- `npm run start:front` : Démarre le front Next.js en mode prod
+- `npm run start:back` : Démarre l'API NestJS en mode prod
+
+## ⚙️ Variables d'environnement
+Exemple de `.env` à la racine :
+```
+# --- Backend ---
+NEST_PORT=3001
+NEST_CORS_ORIGIN=http://localhost:3000
+
+# --- Frontend ---
+NEXT_PUBLIC_API_URL=http://localhost:3001
+```
 
 ## 👥 Jouer en ligne avec un ami
 
@@ -49,7 +60,8 @@ npm run dev
 
 ## 🛠️ Technologies utilisées
 
-- Next.js 14
+- Next.js 14 (frontend)
+- NestJS 11 (backend temps réel)
 - TypeScript
 - Tailwind CSS
 - Socket.IO (temps réel)
