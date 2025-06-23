@@ -18,7 +18,7 @@ export default function Game({ code, socket, color }: GameProps) {
     if (!socket) return
     const handleMove = (move: { from: [number, number], to: [number, number] }) => {
       game.movePiece(move.from, move.to)
-      setGame(new GameModel(game))
+      setGame(game.clone())
       setYourTurn(true)
     }
     socket.on('move', handleMove)
@@ -30,7 +30,7 @@ export default function Game({ code, socket, color }: GameProps) {
   const handleMove = (from: [number, number], to: [number, number]) => {
     if (!yourTurn) return
     if (game.movePiece(from, to)) {
-      setGame(new GameModel(game))
+      setGame(game.clone())
       socket.emit('move', { code, move: { from, to } })
       setYourTurn(false)
     }
