@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { io } from 'socket.io-client'
 import Game from '@/components/game/Game'
 
-const socket = io('http://localhost:3001')
+const socket = io(process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001')
 
 export default function Home() {
   const [code, setCode] = useState('')
@@ -61,10 +61,10 @@ export default function Home() {
         <div className="flex flex-col items-center gap-4">
           <div className="text-lg">Code de la partie : <span className="font-mono bg-gray-200 px-2 py-1 rounded">{code}</span></div>
           <div>{players < 2 ? 'En attente d’un autre joueur...' : 'Les deux joueurs sont connectés !'}</div>
-          {players === 2 && (
+          {players === 2 && color && (
             <>
               <div className="mb-2">Tu joues les <span className={color === 'white' ? 'text-gray-700' : 'text-black bg-white px-2 rounded'}>{color === 'white' ? 'blancs' : 'noirs'}</span></div>
-              <Game code={code} socket={socket} color={color} />
+              <Game code={code} socket={socket} color={color as 'white' | 'black'} />
             </>
           )}
         </div>
