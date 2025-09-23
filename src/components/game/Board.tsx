@@ -14,6 +14,8 @@ export default function Board({ game, onMove }: BoardProps) {
   const board = game.getBoard()
 
   const handleSquareClick = (row: number, col: number) => {
+    // Si ce n'est pas votre tour, on ignore toute interaction
+    if (!onMove) return
     if (selectedSquare) {
       const [fromRow, fromCol] = selectedSquare
       if (fromRow === row && fromCol === col) {
@@ -21,11 +23,9 @@ export default function Board({ game, onMove }: BoardProps) {
         setValidMoves([])
         return
       }
-      if (game.movePiece([fromRow, fromCol], [row, col])) {
-        if (onMove) onMove([fromRow, fromCol], [row, col])
-        setSelectedSquare(null)
-        setValidMoves([])
-      }
+      onMove([fromRow, fromCol], [row, col])
+      setSelectedSquare(null)
+      setValidMoves([])
     } else {
       const piece = board.getPiece([row, col])
       if (piece && piece.getColor() === game.getCurrentPlayer().getColor()) {

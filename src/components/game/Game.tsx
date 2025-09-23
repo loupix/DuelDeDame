@@ -8,32 +8,57 @@ interface GameProps {
   code: string
   socket: any
   color: 'white' | 'black'
+  turn?: 'white' | 'black'
 }
 
-export default function Game({ code, socket, color }: GameProps) {
+export default function Game({ code, socket, color, turn }: GameProps) {
   const [game, setGame] = useState(() => new GameModel())
-  const [yourTurn, setYourTurn] = useState(color === 'white')
+  const [yourTurn, setYourTurn] = useState(false)
 
   useEffect(() => {
     if (!socket) return
-    const handleMove = (move: { from: [number, number], to: [number, number] }) => {
-      game.movePiece(move.from, move.to)
-      setGame(game.clone())
-      setYourTurn(true)
+    const handleMove = (payload: { move: { from: [number, number], to: [number, number] }, by?: string }) => {
+      console.log('[WS][client][recv][move]', payload)
+      // Appliquer le coup reçu et redonner la main
+      // Si c'est nous qui venons d'émettre, ignorer (déjà appliqué localement)
+      if (payload.by && socket.id && payload.by === socket.id) return
+      setGame(prev => {
+        const updated = prev.clone()
+        updated.movePiece(payload.move.from, payload.move.to)
+        return updated
+      })
+      // Le tour sera mis à jour via l'event 'turn'
+    }
+    const handleTurn = (turn: 'white' | 'black') => {
+      console.log('[WS][client][recv][turn]', turn)
+      setYourTurn(turn === color)
     }
     socket.on('move', handleMove)
+    socket.on('turn', handleTurn)
     return () => {
       socket.off('move', handleMove)
+      socket.off('turn', handleTurn)
     }
-  }, [socket, game])
+  }, [socket, color])
+
+  useEffect(() => {
+    if (!turn) return
+    setYourTurn(turn === color)
+  }, [turn, color])
 
   const handleMove = (from: [number, number], to: [number, number]) => {
     if (!yourTurn) return
-    if (game.movePiece(from, to)) {
-      setGame(game.clone())
-      socket.emit('move', { code, move: { from, to } })
-      setYourTurn(false)
-    }
+    // Valider et appliquer localement
+    setGame(prev => {
+      const updated = prev.clone()
+      if (updated.movePiece(from, to)) {
+        console.log('[WS][client][emit][move]', { code, move: { from, to }, color })
+        socket.emit('move', { code, move: { from, to }, color })
+        return updated
+      }
+      return prev
+    })
+    // Le serveur émettra 'turn'
   }
 
   return (
