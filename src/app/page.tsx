@@ -4,9 +4,6 @@ import { io } from 'socket.io-client'
 import Game from '@/components/game/Game'
 
 const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001')
-// Log basique des connexions
-socket.on('connect', () => console.log('[WS][client][connect]', { socketId: socket.id }))
-socket.on('disconnect', (reason) => console.log('[WS][client][disconnect]', { reason }))
 
 export default function Home() {
   const [code, setCode] = useState('')
@@ -15,50 +12,68 @@ export default function Home() {
   const [error, setError] = useState('')
   const [color, setColor] = useState<string | null>(null)
   const [turn, setTurn] = useState<'white' | 'black' | null>(null)
+  const [clientId, setClientId] = useState<string | null>(null)
+  const [colorMap, setColorMap] = useState<Record<string, 'white' | 'black'>>({})
+
+  useEffect(() => {
+    const stored = localStorage.getItem('clientId')
+    if (stored) {
+      setClientId(stored)
+    } else {
+      const cid = crypto.randomUUID()
+      localStorage.setItem('clientId', cid)
+      setClientId(cid)
+    }
+    const storedColors = localStorage.getItem('colorMap')
+    if (storedColors) {
+      try { setColorMap(JSON.parse(storedColors)) } catch {}
+    }
+  }, [])
 
   const handleJoin = (e: any) => {
     e.preventDefault()
-    if (!code) return
-    console.log('[WS][client][emit][join]', { code })
-    socket.emit('join', code)
-    console.log('[WS][client][emit][ready]', { code })
+    if (!code || !clientId) return
+    socket.emit('join', { code, clientId })
     socket.emit('ready', code)
   }
 
   const handleCreate = () => {
     const newCode = Math.random().toString(36).substring(2, 8).toUpperCase()
     setCode(newCode)
-    console.log('[WS][client][emit][join]', { code: newCode })
-    socket.emit('join', newCode)
-    console.log('[WS][client][emit][ready]', { code: newCode })
+    // Création: ne pas envoyer clientId pour forcer l'attribution d'une nouvelle couleur
+    socket.emit('join', { code: newCode })
     socket.emit('ready', newCode)
   }
 
   useEffect(() => {
     const onJoined = (data: { code: string, color: string }) => {
-      console.log('[WS][client][recv][joined]', data)
       setJoined(true)
       setError('')
       setCode(data.code)
       setColor(data.color)
+      setColorMap(prev => {
+        const next = { ...prev, [data.code]: data.color as 'white' | 'black' }
+        localStorage.setItem('colorMap', JSON.stringify(next))
+        return next
+      })
     }
-    const onFull = () => { console.log('[WS][client][recv][full]'); setError('Partie pleine !') }
-    const onPlayers = (n: number) => { console.log('[WS][client][recv][players]', n); setPlayers(n) }
-    const onTurn = (t: 'white' | 'black') => {
-      console.log('[WS][client][recv][turn]', t)
-      setTurn(t)
-    }
+    const onFull = () => { setError('Partie pleine !') }
+    const onReplaced = () => { setJoined(false); setPlayers(1); setColor(null); setTurn(null); }
+    const onPlayers = (n: number) => { setPlayers(n) }
+    const onTurn = (t: 'white' | 'black') => { setTurn(t) }
 
     socket.on('joined', onJoined)
     socket.on('full', onFull)
     socket.on('players', onPlayers)
     socket.on('turn', onTurn)
+    socket.on('replaced', onReplaced)
 
     return () => {
       socket.off('joined', onJoined)
       socket.off('full', onFull)
       socket.off('players', onPlayers)
       socket.off('turn', onTurn)
+      socket.off('replaced', onReplaced)
     }
   }, [])
 

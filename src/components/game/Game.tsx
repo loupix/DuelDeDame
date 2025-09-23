@@ -18,7 +18,6 @@ export default function Game({ code, socket, color, turn }: GameProps) {
   useEffect(() => {
     if (!socket) return
     const handleMove = (payload: { move: { from: [number, number], to: [number, number] }, by?: string }) => {
-      console.log('[WS][client][recv][move]', payload)
       // Appliquer le coup reçu et redonner la main
       // Si c'est nous qui venons d'émettre, ignorer (déjà appliqué localement)
       if (payload.by && socket.id && payload.by === socket.id) return
@@ -30,7 +29,6 @@ export default function Game({ code, socket, color, turn }: GameProps) {
       // Le tour sera mis à jour via l'event 'turn'
     }
     const handleTurn = (turn: 'white' | 'black') => {
-      console.log('[WS][client][recv][turn]', turn)
       setYourTurn(turn === color)
     }
     socket.on('move', handleMove)
@@ -51,11 +49,10 @@ export default function Game({ code, socket, color, turn }: GameProps) {
     // Valider et appliquer localement
     setGame(prev => {
       const updated = prev.clone()
-      if (updated.movePiece(from, to)) {
-        console.log('[WS][client][emit][move]', { code, move: { from, to }, color })
-        socket.emit('move', { code, move: { from, to }, color })
-        return updated
-      }
+        if (updated.movePiece(from, to)) {
+          socket.emit('move', { code, move: { from, to }, color })
+          return updated
+        }
       return prev
     })
     // Le serveur émettra 'turn'
