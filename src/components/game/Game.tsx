@@ -39,13 +39,15 @@ export default function Game({ code, socket, color, turn }: GameProps) {
         const updated = prev.clone()
         if (updated.movePiece(payload.move.from, payload.move.to)) {
           // Enregistrer le coup dans le service de données
-          const piece = updated.getPieceAt(payload.move.to)
-          const capture = updated.wasLastMoveCapture()
+          const board = updated.getBoard()
+          const piece = board.getPiece(payload.move.to)
+          const capture = Math.abs(payload.move.to[0] - payload.move.from[0]) === 2 && 
+                         Math.abs(payload.move.to[1] - payload.move.from[1]) === 2
           gameDataService.recordMove(
             payload.move.from, 
             payload.move.to, 
             payload.by === socket.id ? color : (color === 'white' ? 'black' : 'white'),
-            piece || 'unknown',
+            piece ? piece.constructor.name.toLowerCase() : 'unknown',
             capture
           )
           return updated
@@ -101,9 +103,10 @@ export default function Game({ code, socket, color, turn }: GameProps) {
         socket.emit('move', { code, move: { from, to }, color })
         
         // Enregistrer le coup
-        const piece = updated.getPieceAt(to)
-        const capture = updated.wasLastMoveCapture()
-        gameDataService.recordMove(from, to, color, piece || 'unknown', capture)
+        const board = updated.getBoard()
+        const piece = board.getPiece(to)
+        const capture = Math.abs(to[0] - from[0]) === 2 && Math.abs(to[1] - from[1]) === 2
+        gameDataService.recordMove(from, to, color, piece ? piece.constructor.name.toLowerCase() : 'unknown', capture)
         
         return updated
       }
