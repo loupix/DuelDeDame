@@ -1,0 +1,12 @@
+node_modules/
+.next/
+api/dist/
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+npm-debug.log*
+yarn-error.log
+games.db
+**/.turbo/
+**/.cache/

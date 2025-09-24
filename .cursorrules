@@ -1,0 +1,64 @@
+{
+  // Nom et description visibles dans Cursor
+  "name": "Duel de Dame - Project Rules",
+  "description": "Règles d'édition et de génération d'IA pour Next.js + NestJS + TypeORM (SQLite).",
+
+  // Directives générales
+  "rules": [
+    // Communication
+    "Toujours répondre en français, concis, et orienté action.",
+    "N'utiliser du Markdown que pour les extraits de code, listes courtes ou blocs de commandes.",
+
+    // Style de code
+    "Ne jamais modifier le style d'indentation existant (espaces vs tabulations).",
+    "Écrire du code lisible: noms explicites, early returns, gérer les erreurs/edge-cases.",
+    "Éviter les commentaires triviaux; commenter le 'pourquoi' sur les parties complexes.",
+    "Ne pas attraper une exception sans la gérer ou la relancer avec contexte.",
+
+    // Frontend (Next.js 14 - app router)
+    "Ne pas utiliser Google Fonts; préférer les polices système (Tailwind font-sans).",
+    "Respecter le découpage app/ et les composants clients côté UI seulement si nécessaire.",
+    "Éviter les dépendances externes superflues.",
+
+    // Backend (NestJS)
+    "Utiliser TypeORM v0.3 avec SQLite (fichier games.db) via @nestjs/typeorm.",
+    "Préférer les repositories et entités plutôt que du SQL brut.",
+    "GameGateway: messages 'join', 'ready', 'move', 'gameEnd' sur le namespace '/'.",
+
+    // Données & persistance
+    "Enregistrer les mouvements en BDD (entités Game/Move).",
+    "Ne pas stocker de secrets en clair dans le code ou dans le repo.",
+
+    // Sessions & replays
+    "Côté front, conserver la session (clientId/code/couleur) dans sessionStorage/localStorage.",
+    "Ajouter la reconnexion socket automatique quand une partie en cours est détectée.",
+
+    // Build & scripts
+    "Pour dev: utiliser 'npm run dev:back' (watch + nodemon) et 'npm run dev:front' ou 'npm run dev:full'.",
+    "Nettoyage: utiliser 'npm run clean' avant un build si des locks Windows apparaissent.",
+
+    // Qualité
+    "Ne pas introduire de dépendances qui créent des conflits peer npm (préférer --legacy-peer-deps si besoin).",
+    "Préserver l'arborescence, éviter de committer des artefacts de build ou la base SQLite.",
+
+    // Favicon & manifest
+    "Utiliser /src/app/icon.svg comme favicon par défaut et déclarer manifest.webmanifest.",
+
+    // Sécurité & CORS
+    "Autoriser CORS pour le front local (http://localhost:3000)."
+  ],
+
+  // Fichiers à éviter de modifier automatiquement
+  "doNotModifyFiles": [
+    "**/.next/**",
+    "api/dist/**",
+    "games.db"
+  ],
+
+  // Prompts de commit/génération (facultatif)
+  "commitConvention": {
+    "type": "conventional",
+    "scopes": ["api", "front", "docs", "build", "chore"]
+  }
+}
+
