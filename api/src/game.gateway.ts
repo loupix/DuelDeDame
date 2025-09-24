@@ -70,6 +70,12 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // informer du tour courant
     console.log('[WS][emit][turn]', { room: code, payload: games[code].currentTurn });
     this.server.to(code).emit('turn', games[code].currentTurn);
+    
+    // Message système pour l'arrivée d'un joueur
+    const playerName = color === 'white' ? 'Blanc' : 'Noir';
+    this.server.to(code).emit('systemMessage', { 
+      message: `${playerName} a rejoint la partie` 
+    });
   }
 
   @SubscribeMessage('ready')
@@ -94,5 +100,45 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // Diffuser le coup (avec l'émetteur) et le prochain tour
     this.server.to(data.code).emit('move', { move: data.move, by: socket.id });
     this.server.to(data.code).emit('turn', game.currentTurn);
+    
+    // Message système pour le changement de tour
+    const nextPlayer = game.currentTurn === 'white' ? 'Blanc' : 'Noir';
+    this.server.to(data.code).emit('systemMessage', { 
+      message: `C'est au tour de ${nextPlayer}` 
+    });
+  }
+
+  @SubscribeMessage('chatMessage')
+  handleChatMessage(
+    @MessageBody() data: { 
+      code: string; 
+      message: string; 
+      sender: 'white' | 'black'; 
+      timestamp: string;
+      isPredefined?: boolean;
+    },
+    @ConnectedSocket() socket: Socket,
+  ) {
+    const game = games[data.code];
+    if (!game) return;
+    
+    // Vérifier que le joueur fait partie de la partie
+    const player = game.players.find(p => p.socketId === socket.id);
+    if (!player || player.color !== data.sender) return;
+    
+    // Diffuser le message à tous les joueurs de la partie
+    this.server.to(data.code).emit('chatMessage', {
+      message: data.message,
+      sender: data.sender,
+      timestamp: data.timestamp,
+      isPredefined: data.isPredefined
+    });
+    
+    console.log('[WS][chat]', { 
+      code: data.code, 
+      sender: data.sender, 
+      message: data.message,
+      isPredefined: data.isPredefined 
+    });
   }
 } 

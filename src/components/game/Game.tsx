@@ -4,6 +4,7 @@ import { Game as GameModel } from '@/models/Game'
 import Board from './Board'
 import GameInfo from './GameInfo'
 import GameEffects from './GameEffects'
+import Chat from './Chat'
 import { GameDataService } from '@/services/GameDataService'
 import AudioService from '@/services/AudioService'
 
@@ -173,6 +174,9 @@ export default function Game({ code, socket, color, turn }: GameProps) {
           </div>
         </>
       )}
+      
+      {/* Composant Chat */}
+      <Chat socket={socket} color={color} gameCode={code} />
     </div>
   )
 } 
