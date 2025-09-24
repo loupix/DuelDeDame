@@ -3,7 +3,9 @@ import { useEffect, useState } from 'react'
 import { io } from 'socket.io-client'
 import Game from '@/components/game/Game'
 import AudioControls from '@/components/AudioControls'
+import CurrentGameInfo from '@/components/CurrentGameInfo'
 import Link from 'next/link'
+import { SessionSyncService } from '@/services/SessionSyncService'
 
 const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001')
 
@@ -17,8 +19,11 @@ export default function Home() {
   const [clientId, setClientId] = useState<string | null>(null)
   const [colorMap, setColorMap] = useState<Record<string, 'white' | 'black'>>({})
   const [audioMenuOpen, setAudioMenuOpen] = useState(false)
+  const [reconnecting, setReconnecting] = useState(false)
+  const sessionSyncService = SessionSyncService.getInstance()
 
   useEffect(() => {
+    // Gestion améliorée des sessions avec persistance
     const stored = localStorage.getItem('clientId')
     if (stored) {
       setClientId(stored)
@@ -27,11 +32,80 @@ export default function Home() {
       localStorage.setItem('clientId', cid)
       setClientId(cid)
     }
+    
+    // Charger la map des couleurs
     const storedColors = localStorage.getItem('colorMap')
     if (storedColors) {
       try { setColorMap(JSON.parse(storedColors)) } catch {}
     }
-  }, [])
+
+    // Vérifier s'il y a une partie en cours à récupérer
+    const currentGame = sessionStorage.getItem('currentGame')
+    if (currentGame) {
+      try {
+        const gameData = JSON.parse(currentGame)
+        if (gameData.code && gameData.color && gameData.clientId) {
+          setCode(gameData.code)
+          setColor(gameData.color)
+          setJoined(true)
+          console.log('[SESSION] Récupération de la partie en cours:', gameData)
+          
+          // Reconnexion automatique au socket
+          setReconnecting(true)
+          const reconnectToGame = () => {
+            if (socket.connected) {
+              console.log('[WS][client][emit][join]', { code: gameData.code, clientId: gameData.clientId })
+              socket.emit('join', { code: gameData.code, clientId: gameData.clientId })
+              console.log('[WS][client][emit][ready]', { code: gameData.code })
+              socket.emit('ready', gameData.code)
+              setReconnecting(false)
+            } else {
+              // Attendre que le socket soit connecté
+              socket.on('connect', () => {
+                console.log('[WS][client][emit][join]', { code: gameData.code, clientId: gameData.clientId })
+                socket.emit('join', { code: gameData.code, clientId: gameData.clientId })
+                console.log('[WS][client][emit][ready]', { code: gameData.code })
+                socket.emit('ready', gameData.code)
+                setReconnecting(false)
+              })
+            }
+          }
+          
+          // Délai pour s'assurer que le socket est prêt
+          setTimeout(reconnectToGame, 1000)
+        }
+      } catch (error) {
+        console.error('Erreur lors de la récupération de la partie:', error)
+        sessionStorage.removeItem('currentGame')
+      }
+    }
+
+    // Nettoyer les sessions expirées
+    sessionSyncService.cleanupExpiredSessions()
+
+    // S'abonner aux changements de clientId
+    const unsubscribeClientId = sessionSyncService.subscribe('clientIdChanged', (data) => {
+      if (data.clientId && data.clientId !== clientId) {
+        setClientId(data.clientId)
+        console.log('[SESSION_SYNC] ClientId mis à jour depuis un autre onglet:', data.clientId)
+      }
+    })
+
+    // S'abonner aux changements de session de jeu
+    const unsubscribeGameSession = sessionSyncService.subscribe('gameSessionChanged', (gameData) => {
+      if (gameData.code && gameData.color && !joined) {
+        setCode(gameData.code)
+        setColor(gameData.color)
+        setJoined(true)
+        console.log('[SESSION_SYNC] Session de jeu mise à jour depuis un autre onglet:', gameData)
+      }
+    })
+
+    return () => {
+      unsubscribeClientId()
+      unsubscribeGameSession()
+    }
+  }, [clientId, joined, sessionSyncService])
 
   const handleJoin = (e: any) => {
     e.preventDefault()
@@ -63,9 +137,32 @@ export default function Home() {
         localStorage.setItem('colorMap', JSON.stringify(next))
         return next
       })
+      
+      // Sauvegarder la session de la partie en cours
+      const gameSession = {
+        code: data.code,
+        color: data.color,
+        clientId: clientId,
+        timestamp: Date.now()
+      }
+      sessionStorage.setItem('currentGame', JSON.stringify(gameSession))
+      
+      // Synchroniser avec les autres onglets
+      sessionSyncService.syncGameSession(gameSession)
+      sessionSyncService.syncClientId(clientId || '')
+      
+      console.log('[SESSION] Partie sauvegardée et synchronisée:', gameSession)
     }
     const onFull = () => { console.log('[WS][client][recv][full]'); setError('Partie pleine !') }
-    const onReplaced = () => { console.log('[WS][client][recv][replaced]'); setJoined(false); setPlayers(1); setColor(null); setTurn(null); }
+    const onReplaced = () => { 
+      console.log('[WS][client][recv][replaced]'); 
+      setJoined(false); 
+      setPlayers(1); 
+      setColor(null); 
+      setTurn(null);
+      // Nettoyer la session
+      sessionStorage.removeItem('currentGame');
+    }
     const onPlayers = (n: number) => { console.log('[WS][client][recv][players]', n); setPlayers(n) }
     const onTurn = (t: 'white' | 'black') => {
       console.log('[WS][client][recv][turn]', t)
@@ -112,6 +209,12 @@ export default function Home() {
               className="px-3 py-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-md transition-colors duration-200"
             >
               Replays
+            </Link>
+            <Link 
+              href="/replays-db" 
+              className="px-3 py-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-md transition-colors duration-200"
+            >
+              Replays BDD
             </Link>
             
             {/* Bouton Audio */}
@@ -210,7 +313,12 @@ export default function Home() {
                   </span>
                 </div>
                 <div className="text-slate-400">
-                  {players < 2 ? (
+                  {reconnecting ? (
+                    <div className="flex items-center justify-center space-x-2">
+                      <div className="animate-spin w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full"></div>
+                      <span>Reconnexion à la partie...</span>
+                    </div>
+                  ) : players < 2 ? (
                     <div className="flex items-center justify-center space-x-2">
                       <div className="animate-spin w-4 h-4 border-2 border-slate-500 border-t-transparent rounded-full"></div>
                       <span>En attente d'un adversaire...</span>
@@ -223,6 +331,9 @@ export default function Home() {
                 </div>
               </div>
             </div>
+
+            {/* Informations de la partie en cours */}
+            <CurrentGameInfo className="mb-8" />
 
             {players === 2 && color && (
               <div className="bg-slate-900/50 backdrop-blur-sm rounded-lg p-6 border border-slate-800">

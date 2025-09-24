@@ -25,10 +25,18 @@ export default function Game({ code, socket, color, turn }: GameProps) {
   // Démarrer l'enregistrement de la partie
   useEffect(() => {
     if (!gameStarted && turn) {
-      gameDataService.startGame(code, color)
-      setGameStarted(true)
-      // Son de début de partie
-      audioService.playGameStartSound()
+      // Vérifier s'il y a une partie en cours à récupérer
+      const currentGameInfo = gameDataService.getCurrentGameInfo()
+      if (currentGameInfo && currentGameInfo.code === code && currentGameInfo.color === color) {
+        console.log('[GAME] Récupération de la partie en cours:', currentGameInfo)
+        setGameStarted(true)
+        // Ne pas jouer le son de début si on récupère une partie
+      } else {
+        gameDataService.startGame(code, color)
+        setGameStarted(true)
+        // Son de début de partie
+        audioService.playGameStartSound()
+      }
     }
   }, [turn, code, color, gameStarted, gameDataService, audioService])
 
@@ -82,6 +90,9 @@ export default function Game({ code, socket, color, turn }: GameProps) {
       
       // Terminer l'enregistrement de la partie
       gameDataService.endGame(gameResult, 'Adversaire')
+      
+      // Nettoyer la session
+      sessionStorage.removeItem('currentGame')
     }
 
     socket.on('move', handleMove)

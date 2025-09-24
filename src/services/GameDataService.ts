@@ -67,6 +67,9 @@ export class GameDataService {
     this.stats = this.loadStats()
     this.gameHistory = this.loadGameHistory()
     this.gameReplays = this.loadGameReplays()
+    
+    // Charger la partie en cours si elle existe
+    this.loadCurrentGame()
   }
 
   static getInstance(): GameDataService {
@@ -165,6 +168,9 @@ export class GameDataService {
       color,
       code
     }
+    
+    // Sauvegarder la partie en cours
+    this.saveCurrentGame()
   }
 
   // Enregistrer un coup
@@ -182,6 +188,9 @@ export class GameDataService {
     }
 
     this.currentGame.moves.push(move)
+    
+    // Sauvegarder la partie en cours après chaque coup
+    this.saveCurrentGame()
   }
 
   // Terminer une partie
@@ -236,6 +245,9 @@ export class GameDataService {
 
     // Réinitialiser la partie courante
     this.currentGame = null
+    
+    // Nettoyer la sauvegarde de la partie en cours
+    this.clearCurrentGame()
   }
 
   // Mettre à jour les statistiques
@@ -376,5 +388,70 @@ export class GameDataService {
     }
 
     return recentStats
+  }
+
+  // Sauvegarder la partie en cours
+  private saveCurrentGame(): void {
+    if (!this.currentGame) return
+    
+    try {
+      const gameData = {
+        ...this.currentGame,
+        lastSaved: Date.now()
+      }
+      sessionStorage.setItem('currentGameData', JSON.stringify(gameData))
+    } catch (error) {
+      console.error('Erreur lors de la sauvegarde de la partie en cours:', error)
+    }
+  }
+
+  // Charger la partie en cours
+  loadCurrentGame(): typeof this.currentGame | null {
+    try {
+      const saved = sessionStorage.getItem('currentGameData')
+      if (saved) {
+        const gameData = JSON.parse(saved)
+        // Vérifier que la partie n'est pas trop ancienne (24h max)
+        const maxAge = 24 * 60 * 60 * 1000 // 24 heures
+        if (Date.now() - gameData.lastSaved < maxAge) {
+          this.currentGame = gameData
+          return this.currentGame
+        } else {
+          // Partie trop ancienne, la supprimer
+          this.clearCurrentGame()
+        }
+      }
+    } catch (error) {
+      console.error('Erreur lors du chargement de la partie en cours:', error)
+      this.clearCurrentGame()
+    }
+    
+    return null
+  }
+
+  // Nettoyer la sauvegarde de la partie en cours
+  private clearCurrentGame(): void {
+    try {
+      sessionStorage.removeItem('currentGameData')
+    } catch (error) {
+      console.error('Erreur lors du nettoyage de la partie en cours:', error)
+    }
+  }
+
+  // Vérifier s'il y a une partie en cours
+  hasCurrentGame(): boolean {
+    return this.currentGame !== null
+  }
+
+  // Obtenir les informations de la partie en cours
+  getCurrentGameInfo(): { code: string; color: 'white' | 'black'; moves: number; duration: number } | null {
+    if (!this.currentGame) return null
+    
+    return {
+      code: this.currentGame.code,
+      color: this.currentGame.color,
+      moves: this.currentGame.moves.length,
+      duration: Math.floor((Date.now() - this.currentGame.startTime) / 1000)
+    }
   }
 }
