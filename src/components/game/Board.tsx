@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { Game } from '@/models/Game'
 import Square from './Square'
+import AudioService from '@/services/AudioService'
 
 interface BoardProps {
   game: Game
@@ -12,6 +13,7 @@ export default function Board({ game, onMove }: BoardProps) {
   const [selectedSquare, setSelectedSquare] = useState<[number, number] | null>(null)
   const [validMoves, setValidMoves] = useState<[number, number][]>([])
   const board = game.getBoard()
+  const audioService = AudioService.getInstance()
 
   const handleSquareClick = (row: number, col: number) => {
     // Si ce n'est pas votre tour, on ignore toute interaction
@@ -23,14 +25,35 @@ export default function Board({ game, onMove }: BoardProps) {
         setValidMoves([])
         return
       }
-      onMove([fromRow, fromCol], [row, col])
-      setSelectedSquare(null)
-      setValidMoves([])
+      
+      // Vérifier si c'est un mouvement valide avant de jouer le son
+      const isValidMove = validMoves.some(([r, c]) => r === row && c === col)
+      if (isValidMove) {
+        // Vérifier si c'est une capture
+        const isCapture = Math.abs(row - fromRow) === 2 && Math.abs(col - fromCol) === 2
+        if (isCapture) {
+          audioService.playCaptureSound()
+        } else {
+          audioService.playMoveSound()
+        }
+        
+        onMove([fromRow, fromCol], [row, col])
+        setSelectedSquare(null)
+        setValidMoves([])
+      } else {
+        // Mouvement invalide
+        audioService.playErrorSound()
+      }
     } else {
       const piece = board.getPiece([row, col])
       if (piece && piece.getColor() === game.getCurrentPlayer().getColor()) {
         setSelectedSquare([row, col])
         setValidMoves(piece.getValidMoves(board))
+        // Son de sélection de pièce
+        audioService.playNotificationSound()
+      } else {
+        // Clic sur une case vide ou pièce adverse
+        audioService.playErrorSound()
       }
     }
   }

@@ -5,6 +5,7 @@ import Board from './Board'
 import GameInfo from './GameInfo'
 import GameEffects from './GameEffects'
 import { GameDataService } from '@/services/GameDataService'
+import AudioService from '@/services/AudioService'
 
 interface GameProps {
   code: string
@@ -19,14 +20,17 @@ export default function Game({ code, socket, color, turn }: GameProps) {
   const [gameStarted, setGameStarted] = useState(false)
   const [gameEnded, setGameEnded] = useState(false)
   const gameDataService = GameDataService.getInstance()
+  const audioService = AudioService.getInstance()
 
   // Démarrer l'enregistrement de la partie
   useEffect(() => {
     if (!gameStarted && turn) {
       gameDataService.startGame(code, color)
       setGameStarted(true)
+      // Son de début de partie
+      audioService.playGameStartSound()
     }
-  }, [turn, code, color, gameStarted, gameDataService])
+  }, [turn, code, color, gameStarted, gameDataService, audioService])
 
   useEffect(() => {
     if (!socket) return
@@ -61,6 +65,8 @@ export default function Game({ code, socket, color, turn }: GameProps) {
     const handleTurn = (turn: 'white' | 'black') => {
       console.log('[WS][client][recv][turn]', turn)
       setYourTurn(turn === color)
+      // Son de changement de tour
+      audioService.playTurnSound()
     }
 
     const handleGameEnd = (result: { winner?: 'white' | 'black', reason?: string }) => {
@@ -72,6 +78,9 @@ export default function Game({ code, socket, color, turn }: GameProps) {
       if (result.winner) {
         gameResult = result.winner === color ? 'win' : 'loss'
       }
+      
+      // Son de fin de partie
+      audioService.playGameEndSound()
       
       // Terminer l'enregistrement de la partie
       gameDataService.endGame(gameResult, 'Adversaire')
@@ -91,7 +100,9 @@ export default function Game({ code, socket, color, turn }: GameProps) {
   useEffect(() => {
     if (!turn) return
     setYourTurn(turn === color)
-  }, [turn, color])
+    // Son de changement de tour
+    audioService.playTurnSound()
+  }, [turn, color, audioService])
 
   const handleMove = (from: [number, number], to: [number, number]) => {
     if (!yourTurn || gameEnded) return

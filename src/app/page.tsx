@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { io } from 'socket.io-client'
 import Game from '@/components/game/Game'
+import AudioControls from '@/components/AudioControls'
 import Link from 'next/link'
 
 const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001')
@@ -18,6 +19,7 @@ export default function Home() {
   const [turn, setTurn] = useState<'white' | 'black' | null>(null)
   const [clientId, setClientId] = useState<string | null>(null)
   const [colorMap, setColorMap] = useState<Record<string, 'white' | 'black'>>({})
+  const [audioMenuOpen, setAudioMenuOpen] = useState(false)
 
   useEffect(() => {
     const stored = localStorage.getItem('clientId')
@@ -102,7 +104,7 @@ export default function Home() {
               Duel de Dame
             </h1>
           </div>
-          <div className="flex space-x-2">
+          <div className="flex space-x-2 relative">
             <Link 
               href="/stats" 
               className="px-3 py-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-md transition-colors duration-200"
@@ -115,6 +117,24 @@ export default function Home() {
             >
               Replays
             </Link>
+            
+            {/* Bouton Audio */}
+            <div className="relative">
+              <button
+                onClick={() => setAudioMenuOpen(!audioMenuOpen)}
+                className="px-3 py-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-md transition-colors duration-200 flex items-center space-x-1"
+                title="Contrôles audio"
+              >
+                <span>🔊</span>
+                <span className="text-xs">Audio</span>
+              </button>
+              
+              {/* Menu déroulant audio */}
+              <AudioControls 
+                isOpen={audioMenuOpen} 
+                onClose={() => setAudioMenuOpen(false)} 
+              />
+            </div>
           </div>
         </div>
       </nav>
