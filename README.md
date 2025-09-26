@@ -47,10 +47,20 @@ Exemple de `.env` à la racine :
 # --- Backend ---
 NEST_PORT=3001
 NEST_CORS_ORIGIN=http://localhost:3000
+# SQLite path used by TypeORM (chat persistence)
+NEST_DB_SQLITE_PATH=duel-de-dame.sqlite
 
 # --- Frontend ---
 NEXT_PUBLIC_API_URL=http://localhost:3001
+NEXT_PUBLIC_SOCKET_URL=http://localhost:3001
 ```
+
+### Chat avec persistance
+
+Le chat en temps réel est géré par Socket.IO, et les messages sont persistés via TypeORM (SQLite par défaut).
+
+- Endpoint REST historique: `GET /chat/history/:gameCode?limit=200`
+- Fichier de base de données: contrôlé par `NEST_DB_SQLITE_PATH` (par défaut `duel-de-dame.sqlite`)
 
 ## 👥 Jouer en ligne avec un ami
 

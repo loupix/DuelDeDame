@@ -7,6 +7,12 @@ const inter = Inter({ subsets: ['latin'] })
 export const metadata: Metadata = {
   title: 'Duel de Dame',
   description: 'Un jeu de dames moderne en Next.js',
+  icons: {
+    icon: [
+      { url: '/favicon.ico' },
+      { url: '/favicon.svg', type: 'image/svg+xml' }
+    ],
+  },
 }
 
 export default function RootLayout({

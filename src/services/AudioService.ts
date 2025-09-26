@@ -7,6 +7,7 @@ export type SoundType =
   | 'turn'           // Changement de tour
   | 'error'          // Erreur de mouvement
   | 'notification'   // Notification générale
+  | 'chatMessage'    // Message de chat
 
 interface AudioConfig {
   volume: number
@@ -202,6 +203,27 @@ class AudioService {
     oscillator.stop(this.audioContext.currentTime + 0.1)
   }
 
+  private generateChatMessageSound(): void {
+    if (!this.audioContext) return
+    
+    const oscillator = this.audioContext.createOscillator()
+    const gainNode = this.audioContext.createGain()
+    
+    oscillator.connect(gainNode)
+    gainNode.connect(this.audioContext.destination)
+    
+    // Son doux et court pour les messages de chat
+    oscillator.frequency.setValueAtTime(800, this.audioContext.currentTime)
+    oscillator.frequency.exponentialRampToValueAtTime(1000, this.audioContext.currentTime + 0.05)
+    oscillator.frequency.exponentialRampToValueAtTime(600, this.audioContext.currentTime + 0.1)
+    
+    gainNode.gain.setValueAtTime(0.2 * this.config.volume, this.audioContext.currentTime)
+    gainNode.gain.exponentialRampToValueAtTime(0.01, this.audioContext.currentTime + 0.1)
+    
+    oscillator.start(this.audioContext.currentTime)
+    oscillator.stop(this.audioContext.currentTime + 0.1)
+  }
+
   public playSound(soundType: SoundType): void {
     // Vérifier que nous sommes côté client
     if (typeof window === 'undefined') return
@@ -236,6 +258,9 @@ class AudioService {
         break
       case 'notification':
         this.generateNotificationSound()
+        break
+      case 'chatMessage':
+        this.generateChatMessageSound()
         break
     }
   }
@@ -323,6 +348,10 @@ class AudioService {
 
   public playNotificationSound(): void {
     this.playSound('notification')
+  }
+
+  public playChatMessageSound(): void {
+    this.playSound('chatMessage')
   }
 }
 

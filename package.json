@@ -4,19 +4,30 @@
   "private": true,
   "scripts": {
     "dev:front": "next dev",
-    "dev:back": "nest start --watch",
-    "dev": "concurrently \"npm run dev:front\" \"npm run dev:back\"",
+    "dev:back": "cd api && npx tsc src/main.ts --outDir dist --target ES2020 --module commonjs --experimentalDecorators --emitDecoratorMetadata --watch",
+    "dev:back:run": "cd api && node dist/main.js",
+    "dev": "concurrently \"npm:dev:front\" \"npm:dev:back\" \"npm:dev:back:run\"",
     "build:front": "next build",
-    "build:back": "tsc -b tsconfig.build.json --force",
+    "build:back": "cd api && npx tsc src/main.ts --outDir dist --target ES2020 --module commonjs --experimentalDecorators --emitDecoratorMetadata",
     "build": "npm run build:front && npm run build:back",
+    "build:back:fresh": "npm run clean:back && npm run db:reset && npm run build:back",
+    "build:fresh": "npm run clean && npm run db:reset && npm run build",
     "start:front": "next start",
-    "start:back": "node api/dist/main.js",
+    "start:back": "cd api && node dist/main.js",
     "start": "concurrently \"npm run start:front\" \"npm run start:back\"",
+    "clean:front": "node -e \"const fs=require('fs');const p='.next';try{fs.rmSync(p,{recursive:true,force:true})}catch{};console.log('Cleaned',p);\"",
+    "clean:back": "node -e \"const fs=require('fs');const p='api/dist';try{fs.rmSync(p,{recursive:true,force:true})}catch{};console.log('Cleaned',p);\"",
+    "clean": "npm run clean:front && npm run clean:back",
     "format": "prettier --write \"api/src/**/*.ts\" \"api/test/**/*.ts\"",
     "lint": "eslint \"{api/src,api/test,src}/**/*.ts\" --fix",
     "test:back": "jest --config api/jest.config.js",
     "test:front": "echo 'Ajoute ici tes tests front si besoin'",
-    "test": "npm run test:back"
+    "test": "npm run test:back",
+    "db:reset": "node -e \"const fs=require('fs');['api/data/duel-de-dame.sqlite','duel-de-dame.sqlite','api/duel-de-dame.sqlite'].forEach(f=>{try{fs.rmSync(f,{force:true})}catch{}}); console.log('DB reset: SQLite files removed');\"",
+    "db:backup": "node -e \"const fs=require('fs'),path=require('path');const time=new Date().toISOString().replace(/[:.]/g,'-');const dir='backups';try{fs.mkdirSync(dir,{recursive:true})}catch{};['api/data/duel-de-dame.sqlite'].forEach(src=>{if(fs.existsSync(src)){const base=path.basename(src).replace('.sqlite','');const dest=path.join(dir,base+'-'+time+'.sqlite');fs.copyFileSync(src,dest);console.log('Backup:',src,'->',dest)}});\"",
+    "db:info": "node -e \"const fs=require('fs');['api/data/duel-de-dame.sqlite'].forEach(f=>{if(fs.existsSync(f)){const s=fs.statSync(f).size;console.log(f, (s/1024).toFixed(1)+'KB')}else{console.log(f,'(absent)')}});\""
+    ,
+    "db:init": "node -e \"const fs=require('fs');fs.mkdirSync('api/data',{recursive:true});if(!fs.existsSync('api/data/duel-de-dame.sqlite')){fs.writeFileSync('api/data/duel-de-dame.sqlite','');console.log('Created api/data/duel-de-dame.sqlite')}else{console.log('DB file already exists: api/data/duel-de-dame.sqlite')}\""
   },
   "dependencies": {
     "@nestjs/common": "^11.0.1",
@@ -24,6 +35,7 @@
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/platform-socket.io": "^11.1.3",
+    "@nestjs/typeorm": "^11.0.0",
     "@nestjs/websockets": "^11.1.3",
     "@types/howler": "^2.2.12",
     "howler": "^2.2.4",
@@ -33,7 +45,9 @@
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "socket.io": "^4.8.1",
-    "socket.io-client": "^4.7.5"
+    "socket.io-client": "^4.7.5",
+    "sqlite3": "^5.1.7",
+    "typeorm": "^0.3.27"
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.0",

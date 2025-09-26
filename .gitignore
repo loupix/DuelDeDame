@@ -9,6 +9,7 @@
 # next.js
 /.next/
 /api/dist/
+/api/data/
 /out/
 
 # production
