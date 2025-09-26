@@ -8,6 +8,7 @@ export interface CreateChatMessageDto {
   message: string;
   sender: 'white' | 'black' | 'system';
   isPredefined?: boolean;
+  predefinedColor?: string;
 }
 
 @Injectable()
@@ -23,6 +24,7 @@ export class ChatService {
       message: dto.message,
       sender: dto.sender,
       isPredefined: !!dto.isPredefined,
+      predefinedColor: dto.predefinedColor || null,
     });
     return await this.repo.save(entity);
   }

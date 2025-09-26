@@ -18,6 +18,7 @@ export class ChatController {
       message: m.message,
       sender: m.sender,
       isPredefined: m.isPredefined,
+      predefinedColor: m.predefinedColor || undefined,
       timestamp: m.createdAt,
     }));
   }

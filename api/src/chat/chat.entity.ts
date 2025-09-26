@@ -18,6 +18,9 @@ export class ChatMessageEntity {
   @Column({ type: 'boolean', default: false })
   isPredefined!: boolean;
 
+  @Column({ type: 'varchar', nullable: true })
+  predefinedColor?: string | null;
+
   @CreateDateColumn({ type: 'datetime' })
   createdAt!: Date;
 }

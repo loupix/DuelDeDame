@@ -118,6 +118,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
       sender: 'white' | 'black'; 
       timestamp: string;
       isPredefined?: boolean;
+      predefinedColor?: string;
     },
     @ConnectedSocket() socket: Socket,
   ) {
@@ -134,13 +135,15 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
       message: data.message,
       sender: data.sender,
       isPredefined: !!data.isPredefined,
+      predefinedColor: data.predefinedColor,
     }).catch(() => void 0);
 
     this.server.to(data.code).emit('chatMessage', {
       message: data.message,
       sender: data.sender,
       timestamp: data.timestamp,
-      isPredefined: data.isPredefined
+      isPredefined: data.isPredefined,
+      predefinedColor: data.predefinedColor,
     });
     
     console.log('[WS][chat]', { 
