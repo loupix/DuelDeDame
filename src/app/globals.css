@@ -1,3 +1,25 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities; 
+
+/* Scrollbar custom pour zones scrollables du chat */
+.scroll-thin::-webkit-scrollbar {
+  width: 8px;
+}
+.scroll-thin::-webkit-scrollbar-track {
+  background: rgba(100, 116, 139, 0.2); /* slate-500/20 */
+  border-radius: 8px;
+}
+.scroll-thin::-webkit-scrollbar-thumb {
+  background: rgba(59, 130, 246, 0.5); /* blue-500/50 */
+  border-radius: 8px;
+}
+.scroll-thin::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 130, 246, 0.7);
+}
+
+/* Firefox */
+.scroll-thin {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(59, 130, 246, 0.7) rgba(100, 116, 139, 0.2);
+}

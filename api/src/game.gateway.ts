@@ -40,7 +40,7 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   handleJoin(@MessageBody() payload: { code: string; clientId?: string } | string, @ConnectedSocket() socket: Socket) {
     const code = typeof payload === 'string' ? payload : payload.code;
     const clientId = typeof payload === 'string' ? '' : (payload.clientId || '');
-    console.log('[WS][recv][join]', { code, socketId: socket.id, clientId });
+    // console.log('[WS][recv][join]', { code, socketId: socket.id, clientId });
     if (!games[code]) games[code] = { players: [], currentTurn: 'white' };
     // Si clientId correspond à un joueur existant, réattribuer son socket et sa couleur
     if (clientId) {
@@ -49,16 +49,16 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
         // Réattribuer le socket pour ce clientId
         existing.socketId = socket.id;
         socket.join(code);
-        console.log('[WS][emit][joined]', { to: socket.id, payload: { code, color: existing.color } });
+        // console.log('[WS][emit][joined]', { to: socket.id, payload: { code, color: existing.color } });
         socket.emit('joined', { code, color: existing.color });
         this.server.to(code).emit('players', games[code].players.filter(p => p.socketId).length);
-        console.log('[WS][emit][turn]', { room: code, payload: games[code].currentTurn });
+        // console.log('[WS][emit][turn]', { room: code, payload: games[code].currentTurn });
         this.server.to(code).emit('turn', games[code].currentTurn);
         return;
       }
     }
     if (games[code].players.filter(p => p.socketId).length >= 2) {
-      console.log('[WS][emit][full]', { to: socket.id });
+      // console.log('[WS][emit][full]', { to: socket.id });
       socket.emit('full');
       return;
     }
@@ -67,10 +67,10 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     games[code].players.push({ socketId: socket.id, clientId: clientId || socket.id, color });
     socket.join(code);
     socket.emit('joined', { code, color });
-    console.log('[WS][emit][players]', { room: code, payload: games[code].players.filter(p => p.socketId).length });
+    // console.log('[WS][emit][players]', { room: code, payload: games[code].players.filter(p => p.socketId).length });
     this.server.to(code).emit('players', games[code].players.filter(p => p.socketId).length);
     // informer du tour courant
-    console.log('[WS][emit][turn]', { room: code, payload: games[code].currentTurn });
+    // console.log('[WS][emit][turn]', { room: code, payload: games[code].currentTurn });
     this.server.to(code).emit('turn', games[code].currentTurn);
     
     // Message système pour l'arrivée d'un joueur
@@ -146,11 +146,11 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
       predefinedColor: data.predefinedColor,
     });
     
-    console.log('[WS][chat]', { 
-      code: data.code, 
-      sender: data.sender, 
-      message: data.message,
-      isPredefined: data.isPredefined 
-    });
+    // console.log('[WS][chat]', { 
+    //   code: data.code, 
+    //   sender: data.sender, 
+    //   message: data.message,
+    //   isPredefined: data.isPredefined 
+    // });
   }
 } 

@@ -55,6 +55,7 @@ export default function Chat({ socket, color, gameCode }: ChatProps) {
   const [showPredefined, setShowPredefined] = useState(false)
   const [customMessages, setCustomMessages] = useState<string[]>([])
   const [showCustomInput, setShowCustomInput] = useState(false)
+  const [personalInput, setPersonalInput] = useState('')
   const [fadingOutBubbles, setFadingOutBubbles] = useState<Set<string>>(new Set())
   const messagesEndRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -106,11 +107,11 @@ export default function Chat({ socket, color, gameCode }: ChatProps) {
       }
       
       // Debug: vérifier les données reçues
-      console.log('Message reçu:', { 
-        content: payload.message, 
-        isPredefined: payload.isPredefined, 
-        predefinedColor: predefinedColor 
-      })
+      // console.log('Message reçu:', { 
+      //   content: payload.message, 
+      //   isPredefined: payload.isPredefined, 
+      //   predefinedColor: predefinedColor 
+      // })
       setMessages(prev => [...prev, newMsg])
 
       // Jouer le son de message
@@ -165,7 +166,7 @@ export default function Chat({ socket, color, gameCode }: ChatProps) {
       try {
         const res = await fetch(`${apiBase}/chat/history/${gameCode}?limit=200`, { signal: controller.signal })
         if (!res.ok) return
-        const data: { id: string; gameCode: string; message: string; sender: 'white' | 'black' | 'system'; isPredefined?: boolean; timestamp: string }[] = await res.json()
+        const data: { id: string; gameCode: string; message: string; sender: 'white' | 'black' | 'system'; isPredefined?: boolean; predefinedColor?: string; timestamp: string }[] = await res.json()
         if (isCancelled) return
         setMessages(prev => {
           if (prev.length > 0) return prev
@@ -176,7 +177,8 @@ export default function Chat({ socket, color, gameCode }: ChatProps) {
             content: d.message,
             sender: d.sender,
             timestamp: new Date(d.timestamp),
-            isPredefined: d.isPredefined,
+              isPredefined: d.isPredefined,
+              predefinedColor: d.predefinedColor,
           }))
         })
       } catch (_) {
@@ -287,12 +289,11 @@ export default function Chat({ socket, color, gameCode }: ChatProps) {
             <div
               className={`px-4 py-2 rounded-2xl shadow-lg max-w-xs ${
                 bubble.predefinedColor && bubble.isPredefined
-                  ? `${bubble.predefinedColor}/80 text-white`
+                  ? `${bubble.predefinedColor} text-white`
                   : bubble.sender === color 
                     ? 'bg-blue-500/80 text-white' 
                     : 'bg-gray-600/80 text-white'
               }`}
-              title={`Debug: isPredefined=${bubble.isPredefined}, predefinedColor=${bubble.predefinedColor}`}
             >
               <div className="text-sm font-medium">
                 {bubble.sender === color ? 'Toi' : 'Adversaire'}
@@ -336,82 +337,45 @@ export default function Chat({ socket, color, gameCode }: ChatProps) {
               </div>
             </div>
 
-            {/* Messages prédéfinis */}
+            {/* Message personnel - envoi direct */}
             <div className="p-4">
-              <div className="text-xs text-slate-400 mb-3 font-medium">Messages prédéfinis :</div>
-              <div className="grid grid-cols-2 gap-2 mb-4">
-                {PREDEFINED_MESSAGES.map((msg) => (
-                  <button
-                    key={msg.id}
-                    onClick={() => handlePredefinedClick(msg)}
-                    className={`${msg.color} hover:opacity-80 text-white text-xs p-3 rounded-lg transition-all duration-200 transform hover:scale-105 flex items-center gap-2`}
-                  >
-                    <span className="text-lg">{msg.emoji}</span>
-                    <span className="font-medium">{msg.text}</span>
-                  </button>
-                ))}
+              <label className="block text-xs text-slate-400 mb-1">Message personnel</label>
+              <div className="flex items-center gap-2 mb-4">
+                <input
+                  type="text"
+                  value={personalInput}
+                  onChange={(e) => setPersonalInput(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && personalInput.trim()) {
+                      sendMessage(personalInput.trim(), false)
+                      setPersonalInput('')
+                    }
+                  }}
+                  placeholder="Tape ton message..."
+                  className="flex-1 bg-slate-700 text-white px-3 py-2 rounded text-sm border border-slate-600 focus:border-blue-500 focus:outline-none"
+                />
+                <button
+                  onClick={() => { if (personalInput.trim()) { sendMessage(personalInput.trim(), false); setPersonalInput('') } }}
+                  disabled={!personalInput.trim()}
+                  className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 disabled:cursor-not-allowed text-white px-3 py-2 rounded text-sm"
+                >
+                  Envoyer
+                </button>
               </div>
 
-              {/* Messages personnalisés */}
+              {/* Messages prédéfinis */}
               <div className="border-t border-slate-700 pt-4">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="text-xs text-slate-400 font-medium">Messages personnalisés :</div>
-                  <button
-                    onClick={() => setShowCustomInput(!showCustomInput)}
-                    className="text-blue-400 hover:text-blue-300 text-xs transition-colors"
-                  >
-                    + Ajouter
-                  </button>
-                </div>
-
-                {showCustomInput && (
-                  <div className="mb-3 p-3 bg-slate-800 rounded-lg">
-                    <input
-                      ref={customInputRef}
-                      type="text"
-                      value={newMessage}
-                      onChange={(e) => setNewMessage(e.target.value)}
-                      onKeyPress={(e) => e.key === 'Enter' && addCustomMessage()}
-                      placeholder="Nouveau message personnalisé..."
-                      className="w-full bg-slate-700 text-white px-3 py-2 rounded text-sm border border-slate-600 focus:border-blue-500 focus:outline-none mb-2"
-                    />
-                    <div className="flex gap-2">
-                      <button
-                        onClick={addCustomMessage}
-                        disabled={!newMessage.trim()}
-                        className="bg-blue-600 hover:bg-blue-700 disabled:bg-slate-600 disabled:cursor-not-allowed text-white px-3 py-1 rounded text-xs transition-colors"
-                      >
-                        Ajouter
-                      </button>
-                      <button
-                        onClick={() => setShowCustomInput(false)}
-                        className="bg-slate-600 hover:bg-slate-500 text-white px-3 py-1 rounded text-xs transition-colors"
-                      >
-                        Annuler
-                      </button>
-                    </div>
-                  </div>
-                )}
-
-                <div className="space-y-2">
-                  {customMessages.map((msg, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                      <button
-                        onClick={() => handleCustomMessageClick(msg)}
-                        className="flex-1 bg-slate-700 hover:bg-slate-600 text-white text-xs p-2 rounded transition-colors text-left"
-                      >
-                        {msg}
-                      </button>
-                      <button
-                        onClick={() => removeCustomMessage(index)}
-                        className="text-red-400 hover:text-red-300 p-1 rounded transition-colors"
-                        title="Supprimer"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                      </button>
-                    </div>
+                <div className="text-xs text-slate-400 mb-3 font-medium">Messages prédéfinis :</div>
+                <div className="grid grid-cols-2 gap-2 max-h-24 overflow-y-auto pr-1 scroll-thin">
+                  {PREDEFINED_MESSAGES.map((msg) => (
+                    <button
+                      key={msg.id}
+                      onClick={() => handlePredefinedClick(msg)}
+                      className={`${msg.color} hover:opacity-80 text-white text-xs p-3 rounded-lg transition-all duration-200 transform hover:scale-105 flex items-center gap-2`}
+                    >
+                      <span className="text-lg">{msg.emoji}</span>
+                      <span className="font-medium">{msg.text}</span>
+                    </button>
                   ))}
                 </div>
               </div>

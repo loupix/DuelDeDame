@@ -9,7 +9,8 @@ import { ChatModule } from './chat/chat.module';
     ConfigModule.forRoot({ isGlobal: true }),
     TypeOrmModule.forRoot({
       type: 'sqlite',
-      database: process.env.NEST_DB_SQLITE_PATH || 'duel-de-dame.sqlite',
+      // Par défaut on stocke la DB dans api/data
+      database: process.env.NEST_DB_SQLITE_PATH || 'data/duel-de-dame.sqlite',
       autoLoadEntities: true,
       synchronize: true,
     }),
