@@ -8,6 +8,7 @@ import {
   OnGatewayDisconnect,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
+import { ChatService } from './chat/chat.service';
 
 type Player = { socketId: string; clientId: string; color: 'white' | 'black' };
 type Game = { players: Player[]; currentTurn: 'white' | 'black' };
@@ -15,6 +16,7 @@ const games: Record<string, Game> = {};
 
 @WebSocketGateway({ cors: { origin: '*' }, namespace: '/' })
 export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
+  constructor(private readonly chatService: ChatService) {}
   @WebSocketServer()
   server: Server;
 
@@ -126,7 +128,14 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     const player = game.players.find(p => p.socketId === socket.id);
     if (!player || player.color !== data.sender) return;
     
-    // Diffuser le message à tous les joueurs de la partie
+    // Persister et diffuser le message à tous les joueurs de la partie
+    this.chatService.create({
+      gameCode: data.code,
+      message: data.message,
+      sender: data.sender,
+      isPredefined: !!data.isPredefined,
+    }).catch(() => void 0);
+
     this.server.to(data.code).emit('chatMessage', {
       message: data.message,
       sender: data.sender,

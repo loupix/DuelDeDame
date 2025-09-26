@@ -4,13 +4,14 @@
   "private": true,
   "scripts": {
     "dev:front": "next dev",
-    "dev:back": "nest start --watch",
-    "dev": "concurrently \"npm run dev:front\" \"npm run dev:back\"",
+    "dev:back": "cd api && npx tsc src/main.ts --outDir dist --target ES2020 --module commonjs --experimentalDecorators --emitDecoratorMetadata --watch",
+    "dev:back:run": "cd api && node dist/main.js",
+    "dev": "concurrently \"npm run dev:front\" \"npm run dev:back:run\"",
     "build:front": "next build",
-    "build:back": "tsc -b tsconfig.build.json --force",
+    "build:back": "cd api && npx tsc src/main.ts --outDir dist --target ES2020 --module commonjs --experimentalDecorators --emitDecoratorMetadata",
     "build": "npm run build:front && npm run build:back",
     "start:front": "next start",
-    "start:back": "node api/dist/main.js",
+    "start:back": "cd api && node dist/main.js",
     "start": "concurrently \"npm run start:front\" \"npm run start:back\"",
     "format": "prettier --write \"api/src/**/*.ts\" \"api/test/**/*.ts\"",
     "lint": "eslint \"{api/src,api/test,src}/**/*.ts\" --fix",
@@ -24,6 +25,7 @@
     "@nestjs/core": "^11.0.1",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/platform-socket.io": "^11.1.3",
+    "@nestjs/typeorm": "^11.0.0",
     "@nestjs/websockets": "^11.1.3",
     "@types/howler": "^2.2.12",
     "howler": "^2.2.4",
@@ -33,7 +35,9 @@
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1",
     "socket.io": "^4.8.1",
-    "socket.io-client": "^4.7.5"
+    "socket.io-client": "^4.7.5",
+    "sqlite3": "^5.1.7",
+    "typeorm": "^0.3.27"
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.0",
