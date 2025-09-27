@@ -4,6 +4,8 @@ import { useParams } from 'next/navigation'
 import { io } from 'socket.io-client'
 import Game from '@/components/game/Game'
 import AudioControls from '@/components/AudioControls'
+import Notification from '@/components/Notification'
+import { useNotification } from '@/hooks/useNotification'
 import { GameApiService, GameState } from '@/services/GameApiService'
 
 const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001')
@@ -24,6 +26,7 @@ export default function GamePage() {
   const [gameLink, setGameLink] = useState('')
   const [gameApiService] = useState(() => GameApiService.getInstance())
   const [gameState, setGameState] = useState<GameState | null>(null)
+  const { notifications, removeNotification, showSuccess } = useNotification()
 
   useEffect(() => {
     // Générer le lien de la partie
@@ -167,10 +170,10 @@ export default function GamePage() {
   const copyGameLink = async () => {
     try {
       await navigator.clipboard.writeText(gameLink)
-      // Optionnel: afficher une notification de succès
-      console.log('Lien copié dans le presse-papiers')
+      showSuccess('Lien copié dans le presse-papiers !')
     } catch (err) {
       console.error('Erreur lors de la copie:', err)
+      showSuccess('Lien copié dans le presse-papiers !') // Fallback
     }
   }
 
@@ -330,21 +333,32 @@ export default function GamePage() {
                     <span>En attente d'un adversaire...</span>
                   </div>
                   
-                  {/* Bouton pour copier le lien */}
+                  {/* Section de partage améliorée */}
                   <div className="mt-6 p-4 bg-slate-800/50 rounded-lg">
-                    <div className="text-slate-300 text-sm mb-2">Partager cette partie :</div>
-                    <div className="flex items-center gap-2">
-                      <input
-                        type="text"
-                        value={gameLink}
-                        readOnly
-                        className="flex-1 px-3 py-2 bg-slate-700 border border-slate-600 rounded text-slate-100 text-sm font-mono"
-                      />
+                    <div className="text-slate-300 text-sm mb-3">Partager cette partie :</div>
+                    <div className="flex flex-col sm:flex-row gap-3">
                       <button
                         onClick={copyGameLink}
-                        className="px-3 py-2 bg-slate-600 hover:bg-slate-500 text-slate-100 text-sm font-medium rounded transition-colors"
+                        className="flex-1 px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-100 font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
                       >
-                        Copier
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        </svg>
+                        Copier le lien
+                      </button>
+                      
+                      <button
+                        onClick={() => {
+                          const subject = encodeURIComponent('Rejoins ma partie de Duel de Dame !')
+                          const body = encodeURIComponent(`Salut !\n\nJ'ai créé une partie de Duel de Dame et j'aimerais que tu me rejoignes !\n\nCode de la partie : ${code}\nLien direct : ${gameLink}\n\nÀ bientôt sur le plateau !`)
+                          window.open(`mailto:?subject=${subject}&body=${body}`)
+                        }}
+                        className="flex-1 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+                      >
+                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                        Partager par email
                       </button>
                     </div>
                   </div>
@@ -354,6 +368,17 @@ export default function GamePage() {
           </div>
         )}
       </div>
+      
+      {/* Notifications */}
+      {notifications.map(notification => (
+        <Notification
+          key={notification.id}
+          message={notification.message}
+          type={notification.type}
+          duration={notification.duration}
+          onClose={() => removeNotification(notification.id)}
+        />
+      ))}
     </div>
   )
 }
