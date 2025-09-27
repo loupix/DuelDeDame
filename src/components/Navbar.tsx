@@ -60,9 +60,49 @@ export default function Navbar() {
               <span>{identity ? sessionService.displayName(identity) : '...'}</span>
             </div>
             {open && (
-              <div className="absolute left-0 mt-2 w-80 bg-slate-800 border border-slate-700 rounded-md shadow-lg p-2 max-h-96 overflow-auto">
-                <div className="px-2 py-1 text-xs text-slate-300">Vos derniers matchs</div>
-                <div className="divide-y divide-slate-700">
+              <>
+                {/* Zone invisible pour combler le gap */}
+                <div 
+                  className="absolute left-0 top-full w-80 h-2"
+                  onMouseEnter={() => setOpen(true)}
+                  onMouseLeave={() => setOpen(false)}
+                />
+                <div 
+                  className="absolute left-0 mt-2 w-80 bg-slate-800 border border-slate-700 rounded-md shadow-lg overflow-hidden"
+                  onMouseEnter={() => setOpen(true)}
+                  onMouseLeave={() => setOpen(false)}
+                >
+                {/* Header du profil */}
+                <div className="px-4 py-3 bg-slate-700 border-b border-slate-600">
+                  <div className="flex items-center gap-3">
+                    {/* Avatar avec initiales */}
+                    <div 
+                      className="w-10 h-10 rounded-full flex items-center justify-center text-white font-bold text-sm"
+                      style={{ backgroundColor: identity?.avatarColor || '#6366f1' }}
+                    >
+                      {identity ? `${identity.firstName?.[0] || ''}${identity.lastName?.[0] || ''}`.toUpperCase() : '??'}
+                    </div>
+                    {/* Informations du profil */}
+                    <div className="flex-1">
+                      <div className="text-white font-medium">
+                        {identity ? `${identity.firstName} ${identity.lastName}` : 'Utilisateur'}
+                      </div>
+                      <div className="text-slate-300 text-xs">
+                        {identity?.countryCode && (
+                          <span className="flex items-center gap-1">
+                            <CountryFlag countryCode={identity.countryCode} />
+                            {identity.countryCode}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Section des matchs */}
+                <div className="p-2 max-h-64 overflow-auto">
+                  <div className="px-2 py-1 text-xs text-slate-300 font-medium">Vos derniers matchs</div>
+                  <div className="divide-y divide-slate-700">
                   {matches.length === 0 && (
                     <div className="px-3 py-3 text-sm text-slate-400">Aucun match enregistré</div>
                   )}
@@ -75,8 +115,10 @@ export default function Navbar() {
                       <div className="text-xs text-slate-400">{m.code}</div>
                     </div>
                   ))}
+                  </div>
                 </div>
-              </div>
+                </div>
+              </>
             )}
           </div>
           <Link href="/replays" className="text-sm text-slate-300 hover:text-white">Replays</Link>
