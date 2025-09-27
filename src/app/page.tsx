@@ -220,53 +220,60 @@ export default function Home() {
                 </div>
               </div>
             ) : (
-              /* En attente d'adversaire - Interface améliorée */
-              <div className="max-w-2xl mx-auto">
-                <div className="bg-slate-900/50 backdrop-blur-sm rounded-lg p-8 border border-slate-800 text-center">
-                  {/* Header avec animation */}
-                  <div className="mb-6">
-                    <div className="text-2xl font-bold text-slate-100 mb-2">
+              /* En attente d'adversaire - Interface ergonomique améliorée */
+              <div className="max-w-3xl mx-auto">
+                <div className="bg-slate-900/60 backdrop-blur-sm rounded-2xl p-8 border border-slate-700/50 text-center shadow-2xl">
+                  {/* Header avec animation et code mis en évidence */}
+                  <div className="mb-8">
+                    <div className="text-3xl font-bold text-slate-100 mb-4 flex items-center justify-center gap-3">
+                      <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
                       Partie en cours
                     </div>
-                    <div className="text-slate-300">
-                      Code : 
-                      <span className="font-mono bg-slate-800 px-3 py-1 rounded ml-2 text-slate-100 text-lg">
+                    
+                    {/* Code de la partie - Design amélioré */}
+                    <div className="bg-slate-800/80 rounded-xl p-4 border border-slate-600/50 mb-6">
+                      <div className="text-slate-400 text-sm mb-2">Code de la partie</div>
+                      <div className="font-mono text-2xl font-bold text-slate-100 bg-slate-900/50 px-4 py-2 rounded-lg border border-slate-600/30 tracking-wider">
                         {code}
-                      </span>
+                      </div>
                     </div>
                   </div>
 
-                  {/* Animation d'attente améliorée */}
-                  <div className="flex items-center justify-center space-x-3 text-slate-400 mb-8">
+                  {/* Animation d'attente avec design amélioré */}
+                  <div className="flex items-center justify-center space-x-4 text-slate-300 mb-10">
                     <div className="relative">
-                      <div className="animate-spin w-6 h-6 border-2 border-slate-500 border-t-transparent rounded-full"></div>
-                      <div className="absolute inset-0 w-6 h-6 border border-slate-400 rounded-full animate-pulse opacity-30"></div>
+                      <div className="animate-spin w-8 h-8 border-3 border-slate-500 border-t-blue-500 rounded-full"></div>
+                      <div className="absolute inset-0 w-8 h-8 border border-blue-400 rounded-full animate-ping opacity-20"></div>
                     </div>
-                    <span className="text-lg font-medium">En attente d'un adversaire...</span>
+                    <div className="text-center">
+                      <div className="text-xl font-semibold text-slate-200">En attente d'un adversaire...</div>
+                      <div className="text-slate-400 text-sm mt-1">Partagez le lien ci-dessous pour inviter quelqu'un</div>
+                    </div>
                   </div>
                   
-                  {/* Bouton copier le lien - Design amélioré */}
-                  <div className="space-y-4">
+                  {/* Bouton principal - Design ergonomique amélioré */}
+                  <div className="space-y-6">
                     <button
                       onClick={() => {
                         const gameLink = `${window.location.origin}/game/${code}`
                         navigator.clipboard.writeText(gameLink).then(() => {
-                          showSuccess('Lien copié ! Partagez-le avec votre adversaire')
+                          showSuccess('✅ Lien copié ! Partagez-le avec votre adversaire')
                         }).catch(err => {
                           console.error('Erreur lors de la copie:', err)
-                          showSuccess('Lien copié ! Partagez-le avec votre adversaire')
+                          showSuccess('✅ Lien copié ! Partagez-le avec votre adversaire')
                         })
                       }}
-                      className="w-full px-6 py-4 bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-3 shadow-lg hover:shadow-blue-500/25 transform hover:scale-105"
+                      className="w-full px-8 py-5 bg-gradient-to-r from-blue-600 via-blue-700 to-blue-800 hover:from-blue-700 hover:via-blue-800 hover:to-blue-900 text-white font-bold rounded-2xl transition-all duration-300 flex items-center justify-center gap-4 shadow-xl hover:shadow-2xl hover:shadow-blue-500/30 transform hover:scale-105 active:scale-95"
                     >
-                      <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                       </svg>
-                      Copier le lien de la partie
+                      <span className="text-lg">Copier le lien de la partie</span>
+                      <div className="w-2 h-2 bg-white rounded-full animate-pulse"></div>
                     </button>
                     
-                    {/* Options de partage supplémentaires */}
-                    <div className="flex gap-3">
+                    {/* Options de partage - Design amélioré */}
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <button
                         onClick={() => {
                           const gameLink = `${window.location.origin}/game/${code}`
@@ -274,12 +281,12 @@ export default function Home() {
                           const body = encodeURIComponent(`Salut !\n\nJ'ai créé une partie de Duel de Dame et j'aimerais que tu me rejoignes !\n\nCode de la partie : ${code}\nLien direct : ${gameLink}\n\nÀ bientôt sur le plateau !`)
                           window.open(`mailto:?subject=${subject}&body=${body}`)
                         }}
-                        className="flex-1 px-4 py-3 bg-slate-700 hover:bg-slate-600 text-slate-100 font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+                        className="px-6 py-4 bg-slate-700/80 hover:bg-slate-600/80 text-slate-100 font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 4.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
                         </svg>
-                        Email
+                        <span>Partager par email</span>
                       </button>
                       
                       <button
@@ -294,25 +301,39 @@ export default function Home() {
                             }).catch(console.error)
                           } else {
                             navigator.clipboard.writeText(text).then(() => {
-                              showSuccess('Texte copié pour partage !')
+                              showSuccess('📋 Texte copié pour partage !')
                             })
                           }
                         }}
-                        className="flex-1 px-4 py-3 bg-slate-700 hover:bg-slate-600 text-slate-100 font-medium rounded-lg transition-colors flex items-center justify-center gap-2"
+                        className="px-6 py-4 bg-slate-700/80 hover:bg-slate-600/80 text-slate-100 font-semibold rounded-xl transition-all duration-200 flex items-center justify-center gap-3 shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.367 2.684 3 3 0 00-5.367-2.684z" />
                         </svg>
-                        Partager
+                        <span>Partager autrement</span>
                       </button>
                     </div>
                   </div>
                   
-                  {/* Info supplémentaire */}
-                  <div className="mt-6 p-4 bg-slate-800/30 rounded-lg border border-slate-700/50">
-                    <div className="text-slate-400 text-sm">
-                      💡 <strong>Astuce :</strong> Partagez le lien avec votre adversaire pour qu'il puisse vous rejoindre directement !
+                  {/* Section d'aide améliorée */}
+                  <div className="mt-8 p-6 bg-gradient-to-r from-slate-800/40 to-slate-700/40 rounded-xl border border-slate-600/30">
+                    <div className="flex items-start gap-4">
+                      <div className="text-2xl">💡</div>
+                      <div className="text-left">
+                        <div className="text-slate-200 font-semibold mb-2">Comment inviter un adversaire ?</div>
+                        <div className="text-slate-400 text-sm space-y-1">
+                          <div>• Cliquez sur "Copier le lien" pour copier l'URL</div>
+                          <div>• Envoyez le lien par message, email ou réseau social</div>
+                          <div>• Votre adversaire cliquera sur le lien pour vous rejoindre</div>
+                        </div>
+                      </div>
                     </div>
+                  </div>
+                  
+                  {/* Indicateur de statut en temps réel */}
+                  <div className="mt-6 flex items-center justify-center gap-2 text-slate-400 text-sm">
+                    <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                    <span>Partie active • En attente de connexion</span>
                   </div>
                 </div>
               </div>
