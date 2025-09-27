@@ -89,52 +89,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-slate-950">
-      {/* Navigation Épurée */}
-      <nav className="bg-slate-900/50 backdrop-blur-md border-b border-slate-800">
-        <div className="container mx-auto px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-slate-700 rounded-md flex items-center justify-center">
-              <span className="text-slate-300 font-bold text-lg">♟</span>
-            </div>
-            <h1 className="text-xl font-semibold text-slate-100">
-              Duel de Dame
-            </h1>
-          </div>
-          <div className="flex space-x-2 relative">
-            <Link 
-              href="/stats" 
-              className="px-3 py-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-md transition-colors duration-200"
-            >
-              Statistiques
-            </Link>
-            <Link 
-              href="/replays" 
-              className="px-3 py-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-md transition-colors duration-200"
-            >
-              Replays
-            </Link>
-            
-            {/* Bouton Audio */}
-            <div className="relative">
-              <button
-                onClick={() => setAudioMenuOpen(!audioMenuOpen)}
-                className="px-3 py-2 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-md transition-colors duration-200 flex items-center space-x-1"
-                title="Contrôles audio"
-              >
-                <span>🔊</span>
-                <span className="text-xs">Audio</span>
-              </button>
-              
-              {/* Menu déroulant audio */}
-              <AudioControls 
-                isOpen={audioMenuOpen} 
-                onClose={() => setAudioMenuOpen(false)} 
-              />
-            </div>
-          </div>
-        </div>
-      </nav>
-
       <div className="container mx-auto px-6 py-16">
         {!joined ? (
           <div className="max-w-md mx-auto">

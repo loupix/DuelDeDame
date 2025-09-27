@@ -25,8 +25,7 @@
     "test": "npm run test:back",
     "db:reset": "node -e \"const fs=require('fs');['api/data/duel-de-dame.sqlite','duel-de-dame.sqlite','api/duel-de-dame.sqlite'].forEach(f=>{try{fs.rmSync(f,{force:true})}catch{}}); console.log('DB reset: SQLite files removed');\"",
     "db:backup": "node -e \"const fs=require('fs'),path=require('path');const time=new Date().toISOString().replace(/[:.]/g,'-');const dir='backups';try{fs.mkdirSync(dir,{recursive:true})}catch{};['api/data/duel-de-dame.sqlite'].forEach(src=>{if(fs.existsSync(src)){const base=path.basename(src).replace('.sqlite','');const dest=path.join(dir,base+'-'+time+'.sqlite');fs.copyFileSync(src,dest);console.log('Backup:',src,'->',dest)}});\"",
-    "db:info": "node -e \"const fs=require('fs');['api/data/duel-de-dame.sqlite'].forEach(f=>{if(fs.existsSync(f)){const s=fs.statSync(f).size;console.log(f, (s/1024).toFixed(1)+'KB')}else{console.log(f,'(absent)')}});\""
-    ,
+    "db:info": "node -e \"const fs=require('fs');['api/data/duel-de-dame.sqlite'].forEach(f=>{if(fs.existsSync(f)){const s=fs.statSync(f).size;console.log(f, (s/1024).toFixed(1)+'KB')}else{console.log(f,'(absent)')}});\"",
     "db:init": "node -e \"const fs=require('fs');fs.mkdirSync('api/data',{recursive:true});if(!fs.existsSync('api/data/duel-de-dame.sqlite')){fs.writeFileSync('api/data/duel-de-dame.sqlite','');console.log('Created api/data/duel-de-dame.sqlite')}else{console.log('DB file already exists: api/data/duel-de-dame.sqlite')}\""
   },
   "dependencies": {
