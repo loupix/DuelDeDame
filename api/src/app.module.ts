@@ -3,6 +3,8 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { GameGateway } from './game.gateway';
 import { ChatModule } from './chat/chat.module';
+import { SessionModule } from './session/session.module';
+import { MatchModule } from './match/match.module';
 
 @Module({
   imports: [
@@ -15,6 +17,8 @@ import { ChatModule } from './chat/chat.module';
       synchronize: true,
     }),
     ChatModule,
+    SessionModule,
+    MatchModule,
   ],
   providers: [GameGateway],
 })

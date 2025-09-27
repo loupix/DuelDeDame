@@ -234,6 +234,35 @@ export class GameDataService {
     this.saveGameHistory()
     this.saveGameReplays()
 
+    // Envoyer au backend pour persistance par session
+    try {
+      let identity = ''
+      if (typeof window !== 'undefined') {
+        try {
+          const raw = localStorage.getItem('identityObject')
+          if (raw) {
+            const obj = JSON.parse(raw)
+            identity = obj?.identity || ''
+          }
+        } catch {}
+      }
+      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+      if (identity) {
+        fetch(`${apiBase}/matches`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            identity,
+            code: gameRecord.code,
+            result,
+            color: gameRecord.color,
+            duration: gameRecord.duration,
+            moves: gameRecord.moves,
+          })
+        }).catch(() => {})
+      }
+    } catch {}
+
     // Réinitialiser la partie courante
     this.currentGame = null
   }
