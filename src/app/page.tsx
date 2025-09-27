@@ -89,7 +89,7 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-slate-950">
-      <div className="container mx-auto px-6 py-16">
+      <div className="container mx-auto px-6 py-4">
         {!joined ? (
           <div className="max-w-md mx-auto">
             {/* Hero Section Épurée */}
@@ -150,49 +150,90 @@ export default function Home() {
             </div>
           </div>
         ) : (
-          <div className="max-w-4xl mx-auto">
-            {/* Game Status Épuré */}
-            <div className="bg-slate-900/50 backdrop-blur-sm rounded-lg p-6 border border-slate-800 mb-8">
-              <div className="text-center">
-                <div className="text-xl font-semibold text-slate-100 mb-3">
-                  Partie en cours
-                </div>
-                <div className="text-slate-300 mb-2">
-                  Code : 
-                  <span className="font-mono bg-slate-800 px-2 py-1 rounded ml-2 text-slate-100">
-                    {code}
-                  </span>
-                </div>
-                <div className="text-slate-400">
-                  {players < 2 ? (
-                    <div className="flex items-center justify-center space-x-2">
-                      <div className="animate-spin w-4 h-4 border-2 border-slate-500 border-t-transparent rounded-full"></div>
-                      <span>En attente d'un adversaire...</span>
+          <div className="max-w-6xl mx-auto">
+            {players === 2 && color ? (
+              <div className="space-y-4">
+                {/* Barre d'infos gaming stylée */}
+                <div className="relative overflow-hidden">
+                  {/* Effet de fond gaming avec gradient animé */}
+                  <div className="absolute inset-0 bg-gradient-to-r from-blue-600/20 via-purple-600/20 to-cyan-600/20 animate-pulse"></div>
+                  <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent animate-pulse" style={{animationDelay: '1s'}}></div>
+                  
+                  {/* Contenu de la barre */}
+                  <div className="relative bg-slate-900/80 backdrop-blur-sm border border-slate-700/50 rounded-xl p-4 shadow-2xl">
+                    <div className="flex items-center justify-center gap-8">
+                      {/* Couleur du joueur avec style gaming */}
+                      <div className="flex items-center gap-3">
+                        <div className={`w-3 h-3 rounded-full ${
+                          color === 'white' 
+                            ? 'bg-gradient-to-br from-white to-gray-300 shadow-lg shadow-white/30' 
+                            : 'bg-gradient-to-br from-slate-800 to-black shadow-lg shadow-slate-800/30'
+                        }`}></div>
+                        <span className="text-slate-300 text-sm font-medium">Tu joues</span>
+                        <span className={`px-4 py-2 rounded-lg font-bold text-sm shadow-lg ${
+                          color === 'white' 
+                            ? 'bg-gradient-to-r from-white to-gray-200 text-slate-900 shadow-white/20' 
+                            : 'bg-gradient-to-r from-slate-800 to-slate-900 text-slate-100 shadow-slate-800/20'
+                        }`}>
+                          {color === 'white' ? 'BLANCS' : 'NOIRS'}
+                        </span>
+                      </div>
+                      
+                      {/* Séparateur gaming */}
+                      <div className="w-px h-8 bg-gradient-to-b from-transparent via-slate-600 to-transparent"></div>
+                      
+                      {/* Statut de tour avec effets gaming */}
+                      <div className="flex items-center gap-3">
+                        {turn === color ? (
+                          <>
+                            <div className="relative">
+                              <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse shadow-lg shadow-green-500/50"></div>
+                              <div className="absolute inset-0 w-3 h-3 bg-green-400 rounded-full animate-ping opacity-30"></div>
+                            </div>
+                            <span className="text-green-400 text-sm font-bold tracking-wide">
+                              À TOI DE JOUER
+                            </span>
+                            <div className="w-2 h-2 bg-green-400 rounded-full animate-bounce"></div>
+                          </>
+                        ) : (
+                          <>
+                            <div className="relative">
+                              <div className="w-3 h-3 border-2 border-slate-500 border-t-transparent rounded-full animate-spin"></div>
+                              <div className="absolute inset-0 w-3 h-3 border border-slate-400 rounded-full animate-pulse opacity-50"></div>
+                            </div>
+                            <span className="text-slate-400 text-sm font-medium tracking-wide">
+                              TOUR DES {turn === 'white' ? 'BLANCS' : 'NOIRS'}
+                            </span>
+                          </>
+                        )}
+                      </div>
                     </div>
-                  ) : (
-                    <div className="text-green-400 font-medium">
-                      Les deux joueurs sont connectés
-                    </div>
-                  )}
-                </div>
-              </div>
-            </div>
-
-            {players === 2 && color && (
-              <div className="bg-slate-900/50 backdrop-blur-sm rounded-lg p-6 border border-slate-800">
-                <div className="text-center mb-6">
-                  <div className="text-lg font-medium text-slate-100 mb-2">
-                    Tu joues les{' '}
-                    <span className={`px-3 py-1 rounded font-medium ${
-                      color === 'white' 
-                        ? 'bg-slate-100 text-slate-900' 
-                        : 'bg-slate-800 text-slate-100'
-                    }`}>
-                      {color === 'white' ? 'Blancs' : 'Noirs'}
-                    </span>
                   </div>
                 </div>
-                <Game code={code} socket={socket} color={color as 'white' | 'black'} turn={turn ?? undefined} />
+                
+                {/* Plateau de jeu - Maintenant en pleine largeur */}
+                <div className="flex justify-center">
+                  <Game code={code} socket={socket} color={color as 'white' | 'black'} turn={turn ?? undefined} />
+                </div>
+              </div>
+            ) : (
+              /* En attente d'adversaire - Layout centré */
+              <div className="max-w-2xl mx-auto">
+                <div className="bg-slate-900/50 backdrop-blur-sm rounded-lg p-8 border border-slate-800 text-center">
+                  <div className="text-xl font-semibold text-slate-100 mb-4">
+                    Partie en cours
+                  </div>
+                  <div className="text-slate-300 mb-4">
+                    Code : 
+                    <span className="font-mono bg-slate-800 px-2 py-1 rounded ml-2 text-slate-100">
+                      {code}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-center space-x-2 text-slate-400">
+                    <div className="animate-spin w-4 h-4 border-2 border-slate-500 border-t-transparent rounded-full"></div>
+                    <span>En attente d'un adversaire...</span>
+                  </div>
+                </div>
               </div>
             )}
           </div>

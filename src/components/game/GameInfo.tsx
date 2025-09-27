@@ -9,31 +9,26 @@ export default function GameInfo({ game }: GameInfoProps) {
   const isWhiteTurn = currentPlayer.getColor() === 'white'
 
   return (
-    <div className="text-center mb-6">
-      {/* Indicateur de tour gaming */}
-      <div className="bg-slate-900/50 backdrop-blur-sm rounded-lg p-4 border border-slate-800">
-        <div className="flex items-center justify-center space-x-3">
+    <div className="text-center">
+      {/* Indicateur de tour compact */}
+      <div className="bg-slate-900/50 backdrop-blur-sm rounded-lg p-3 border border-slate-800">
+        <div className="flex items-center justify-center space-x-2">
           {/* Icône du joueur actuel */}
-          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+          <div className={`w-6 h-6 rounded-full flex items-center justify-center ${
             isWhiteTurn 
-              ? 'bg-gradient-to-br from-white to-gray-200 border-2 border-gray-300' 
-              : 'bg-gradient-to-br from-slate-800 to-black border-2 border-slate-700'
-          } shadow-lg`}>
-            <span className="text-xs font-bold">
+              ? 'bg-gradient-to-br from-white to-gray-200 border border-gray-300' 
+              : 'bg-gradient-to-br from-slate-800 to-black border border-slate-700'
+          }`}>
+            <span className="text-xs">
               {isWhiteTurn ? '⚪' : '⚫'}
             </span>
           </div>
           
-          {/* Texte du tour */}
+          {/* Texte du tour compact */}
           <div>
-            <h2 className="text-lg font-semibold text-slate-100">
-              Tour du joueur
-            </h2>
-            <p className={`text-sm font-medium ${
-              isWhiteTurn ? 'text-slate-200' : 'text-slate-300'
-            }`}>
-              {isWhiteTurn ? 'Blancs' : 'Noirs'}
-            </p>
+            <span className="text-sm font-medium text-slate-100">
+              Tour des {isWhiteTurn ? 'Blancs' : 'Noirs'}
+            </span>
           </div>
         </div>
       </div>

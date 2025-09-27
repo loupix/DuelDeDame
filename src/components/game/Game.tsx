@@ -127,11 +127,9 @@ export default function Game({ code, socket, color, turn }: GameProps) {
   }
 
   return (
-    <div className="flex flex-col items-center gap-6 relative">
+    <div className="flex flex-col items-center gap-4 relative">
       {/* Effets visuels gaming */}
       <GameEffects isYourTurn={yourTurn} gameEnded={gameEnded} />
-      
-      <GameInfo game={game} />
       
       {gameEnded ? (
         <div className="text-center relative z-10">
@@ -156,19 +154,7 @@ export default function Game({ code, socket, color, turn }: GameProps) {
         </div>
       ) : (
         <>
-          <div className="mb-4 text-center relative z-10">
-            {yourTurn ? (
-              <div className="flex items-center justify-center space-x-2">
-                <div className="animate-pulse w-2 h-2 bg-green-500 rounded-full"></div>
-                <span className="text-green-400 text-sm">À toi de jouer</span>
-              </div>
-            ) : (
-              <div className="flex items-center justify-center space-x-2">
-                <div className="animate-spin w-2 h-2 border-2 border-slate-500 border-t-transparent rounded-full"></div>
-                <span className="text-slate-400 text-sm">En attente de l'adversaire</span>
-              </div>
-            )}
-          </div>
+          {/* Plateau de jeu - Maintenant au centre */}
           <div className="relative z-10">
             <Board game={game} onMove={yourTurn ? handleMove : undefined} />
           </div>

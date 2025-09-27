@@ -308,6 +308,7 @@ export default function Chat({ socket, color, gameCode }: ChatProps) {
       {/* Bouton flottant pour ouvrir le chat - Position fixe */}
       <div className="fixed bottom-4 right-4 z-50">
         <button
+          data-chat-button
           onClick={() => setIsOpen(!isOpen)}
           className="bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white p-4 rounded-full shadow-lg transition-all duration-300 transform hover:scale-110 relative"
         >
