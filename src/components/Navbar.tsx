@@ -2,32 +2,28 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { SessionService } from '@/services/SessionService'
+import { findFlagUrlByIso2Code } from 'country-flags-svg-v2'
 
-// Mapping des codes pays vers les emojis de drapeaux
-const getCountryFlag = (countryCode: string): string => {
-  const flagMap: Record<string, string> = {
-    'FR': '🇫🇷',
-    'BE': '🇧🇪',
-    'CH': '🇨🇭',
-    'CA': '🇨🇦',
-    'ES': '🇪🇸',
-    'IT': '🇮🇹',
-    'DE': '🇩🇪',
-    'GB': '🇬🇧',
-    'US': '🇺🇸',
-    'AU': '🇦🇺',
-    'NL': '🇳🇱',
-    'PT': '🇵🇹',
-    'SE': '🇸🇪',
-    'NO': '🇳🇴',
-    'DK': '🇩🇰',
-    'FI': '🇫🇮',
-    'PL': '🇵🇱',
-    'CZ': '🇨🇿',
-    'HU': '🇭🇺',
-    'AT': '🇦🇹',
+// Composant pour afficher le drapeau du pays
+const CountryFlag = ({ countryCode }: { countryCode: string }) => {
+  try {
+    const flagUrl = findFlagUrlByIso2Code(countryCode)
+    if (flagUrl) {
+      return (
+        <img 
+          src={flagUrl} 
+          alt={`Drapeau ${countryCode}`}
+          className="w-5 h-4 object-cover rounded-sm"
+          title={countryCode}
+        />
+      )
+    }
+  } catch (error) {
+    console.warn('Erreur lors du chargement du drapeau:', error)
   }
-  return flagMap[countryCode] || '🌍'
+  
+  // Fallback avec emoji
+  return <span className="text-lg" title="Pays non détecté">🌍</span>
 }
 
 export default function Navbar() {
@@ -38,6 +34,7 @@ export default function Navbar() {
 
   useEffect(() => {
     const obj = sessionService.getOrCreateIdentity()
+    console.log('Navbar - Identity loaded:', obj)
     setIdentity(obj)
   }, [])
 
@@ -50,21 +47,20 @@ export default function Navbar() {
     <div className="sticky top-0 z-20 bg-slate-900 text-slate-100 border-b border-slate-800">
       <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Link href="/" className="font-semibold">Duel de Dame</Link>
-        </div>
-        <div className="flex items-center gap-4">
-          <Link href="/replays" className="text-sm text-slate-300 hover:text-white">Replays</Link>
           <div className="relative" onMouseEnter={() => setOpen(true)} onMouseLeave={() => setOpen(false)}>
             <div className="px-3 py-1 bg-slate-800 rounded-md text-sm cursor-default flex items-center gap-2">
               {identity && identity.countryCode && (
-                <span className="text-lg" title={identity.countryCode}>
-                  {getCountryFlag(identity.countryCode)}
+                <CountryFlag countryCode={identity.countryCode} />
+              )}
+              {identity && !identity.countryCode && (
+                <span className="text-lg" title="Pays non détecté">
+                  🌍
                 </span>
               )}
               <span>{identity ? sessionService.displayName(identity) : '...'}</span>
             </div>
             {open && (
-              <div className="absolute right-0 mt-2 w-80 bg-slate-800 border border-slate-700 rounded-md shadow-lg p-2 max-h-96 overflow-auto">
+              <div className="absolute left-0 mt-2 w-80 bg-slate-800 border border-slate-700 rounded-md shadow-lg p-2 max-h-96 overflow-auto">
                 <div className="px-2 py-1 text-xs text-slate-300">Vos derniers matchs</div>
                 <div className="divide-y divide-slate-700">
                   {matches.length === 0 && (
@@ -83,6 +79,10 @@ export default function Navbar() {
               </div>
             )}
           </div>
+          <Link href="/replays" className="text-sm text-slate-300 hover:text-white">Replays</Link>
+        </div>
+        <div className="flex items-center gap-4">
+          <Link href="/" className="font-semibold">Duel de Dame</Link>
         </div>
       </div>
     </div>
