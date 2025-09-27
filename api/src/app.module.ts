@@ -5,6 +5,7 @@ import { GameGateway } from './game.gateway';
 import { ChatModule } from './chat/chat.module';
 import { SessionModule } from './session/session.module';
 import { MatchModule } from './match/match.module';
+import { GameModule } from './game/game.module';
 
 @Module({
   imports: [
@@ -19,6 +20,7 @@ import { MatchModule } from './match/match.module';
     ChatModule,
     SessionModule,
     MatchModule,
+    GameModule,
   ],
   providers: [GameGateway],
 })
