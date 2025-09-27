@@ -136,6 +136,21 @@ export class GameService {
     return this.mapToDto(savedGame);
   }
 
+  async getActiveGamesByPlayer(playerId: string): Promise<GameStateDto[]> {
+    const games = await this.repo.find({
+      where: [
+        { whitePlayerId: playerId, status: 'active' },
+        { blackPlayerId: playerId, status: 'active' },
+        { whitePlayerId: playerId, status: 'waiting' },
+        { blackPlayerId: playerId, status: 'waiting' }
+      ],
+      relations: ['whitePlayer', 'blackPlayer'],
+      order: { updatedAt: 'DESC' }
+    });
+
+    return games.map(game => this.mapToDto(game));
+  }
+
   private mapToDto(game: GameEntity): GameStateDto {
     return {
       id: game.id,

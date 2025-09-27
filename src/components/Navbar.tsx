@@ -121,6 +121,7 @@ export default function Navbar() {
               </>
             )}
           </div>
+          <Link href="/profile" className="text-sm text-slate-300 hover:text-white">Profil</Link>
           <Link href="/replays" className="text-sm text-slate-300 hover:text-white">Replays</Link>
         </div>
         <div className="flex items-center gap-4">

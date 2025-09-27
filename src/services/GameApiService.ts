@@ -154,4 +154,22 @@ export class GameApiService {
       };
     }
   }
+
+  async getActiveGamesByPlayer(playerId: string): Promise<{ success: boolean; games?: GameState[]; error?: string }> {
+    try {
+      const response = await fetch(`${this.apiBase}/games/player/${playerId}/active`);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      return await response.json();
+    } catch (error) {
+      console.error('Erreur lors de la récupération des parties actives:', error);
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Erreur inconnue',
+      };
+    }
+  }
 }

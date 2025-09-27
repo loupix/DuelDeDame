@@ -101,4 +101,20 @@ export class GameController {
       };
     }
   }
+
+  @Get('player/:playerId/active')
+  async getActiveGamesByPlayer(@Param('playerId') playerId: string) {
+    try {
+      const games = await this.gameService.getActiveGamesByPlayer(playerId);
+      return {
+        success: true,
+        games,
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error.message,
+      };
+    }
+  }
 }
