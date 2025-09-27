@@ -2,8 +2,11 @@
 import { useEffect, useState } from 'react'
 import { io } from 'socket.io-client'
 import Game from '@/components/game/Game'
+import GameModeSelector from '@/components/game/GameModeSelector'
+import EngineGame from '@/components/game/EngineGame'
 import AudioControls from '@/components/AudioControls'
 import Link from 'next/link'
+import { EngineDifficulty } from '@/engine/factories/EngineStrategyFactory'
 
 const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001')
 
@@ -17,6 +20,8 @@ export default function Home() {
   const [clientId, setClientId] = useState<string | null>(null)
   const [colorMap, setColorMap] = useState<Record<string, 'white' | 'black'>>({})
   const [audioMenuOpen, setAudioMenuOpen] = useState(false)
+  const [gameMode, setGameMode] = useState<'human' | 'engine' | null>(null)
+  const [engineDifficulty, setEngineDifficulty] = useState<EngineDifficulty>('medium')
 
   useEffect(() => {
     const stored = localStorage.getItem('clientId')
@@ -48,8 +53,23 @@ export default function Home() {
     console.log('[WS][client][emit][join]', { code: newCode })
     // Création: ne pas envoyer clientId pour forcer l'attribution d'une nouvelle couleur
     socket.emit('join', { code: newCode })
-    console.log('[WS][client][emit][ready]', { code: newCode })
-    socket.emit('ready', newCode)
+  }
+
+  const handleModeSelect = (mode: 'human' | 'engine', difficulty?: EngineDifficulty) => {
+    setGameMode(mode)
+    if (difficulty) {
+      setEngineDifficulty(difficulty)
+    }
+  }
+
+  const handleBackToMenu = () => {
+    setGameMode(null)
+    setCode('')
+    setJoined(false)
+    setPlayers(1)
+    setColor(null)
+    setTurn(null)
+    setError('')
   }
 
   useEffect(() => {
@@ -136,7 +156,11 @@ export default function Home() {
       </nav>
 
       <div className="container mx-auto px-6 py-16">
-        {!joined ? (
+        {!gameMode ? (
+          <GameModeSelector onModeSelect={handleModeSelect} />
+        ) : gameMode === 'engine' ? (
+          <EngineGame difficulty={engineDifficulty} onBack={handleBackToMenu} />
+        ) : !joined ? (
           <div className="max-w-md mx-auto">
             {/* Hero Section Épurée */}
             <div className="text-center mb-12">
