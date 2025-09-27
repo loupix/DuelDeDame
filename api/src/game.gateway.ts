@@ -9,6 +9,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { ChatService } from './chat/chat.service';
+import { GameService } from './game/game.service';
 
 type Player = { socketId: string; clientId: string; color: 'white' | 'black' };
 type Game = { players: Player[]; currentTurn: 'white' | 'black' };
@@ -16,7 +17,10 @@ const games: Record<string, Game> = {};
 
 @WebSocketGateway({ cors: { origin: '*' }, namespace: '/' })
 export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
-  constructor(private readonly chatService: ChatService) {}
+  constructor(
+    private readonly chatService: ChatService,
+    private readonly gameService: GameService
+  ) {}
   @WebSocketServer()
   server: Server;
 
@@ -24,24 +28,43 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     // Connexion établie
   }
 
-  handleDisconnect(socket: Socket) {
+  async handleDisconnect(socket: Socket) {
     for (const code in games) {
       // On conserve les slots/couleurs en cas de reconnexion via clientId
       const player = games[code].players.find(p => p.socketId === socket.id);
       if (player) player.socketId = '';
       // Si plus aucun joueur connu, on supprime la partie
       const anyActive = games[code].players.some(p => p.socketId);
-      if (!anyActive) delete games[code];
-      else this.server.to(code).emit('players', games[code].players.filter(p => p.socketId).length);
+      if (!anyActive) {
+        delete games[code];
+        // Supprimer aussi de la base de données
+        await this.gameService.deleteGame(code);
+      } else {
+        const playerCount = games[code].players.filter(p => p.socketId).length;
+        this.server.to(code).emit('players', playerCount);
+        // Mettre à jour la base de données
+        await this.gameService.updateGameStatus(code, 'waiting', playerCount);
+      }
     }
   }
 
   @SubscribeMessage('join')
-  handleJoin(@MessageBody() payload: { code: string; clientId?: string } | string, @ConnectedSocket() socket: Socket) {
+  async handleJoin(@MessageBody() payload: { code: string; clientId?: string } | string, @ConnectedSocket() socket: Socket) {
     const code = typeof payload === 'string' ? payload : payload.code;
     const clientId = typeof payload === 'string' ? '' : (payload.clientId || '');
     // console.log('[WS][recv][join]', { code, socketId: socket.id, clientId });
-    if (!games[code]) games[code] = { players: [], currentTurn: 'white' };
+    
+    // Créer la partie en base si elle n'existe pas
+    if (!games[code]) {
+      try {
+        await this.gameService.createGame(code);
+        games[code] = { players: [], currentTurn: 'white' };
+      } catch (error) {
+        socket.emit('error', 'Impossible de créer la partie');
+        return;
+      }
+    }
+    
     // Si clientId correspond à un joueur existant, réattribuer son socket et sa couleur
     if (clientId) {
       const existing = games[code].players.find(p => p.clientId === clientId);
@@ -68,10 +91,14 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
     socket.join(code);
     socket.emit('joined', { code, color });
     // console.log('[WS][emit][players]', { room: code, payload: games[code].players.filter(p => p.socketId).length });
-    this.server.to(code).emit('players', games[code].players.filter(p => p.socketId).length);
+    const playerCount = games[code].players.filter(p => p.socketId).length;
+    this.server.to(code).emit('players', playerCount);
     // informer du tour courant
     // console.log('[WS][emit][turn]', { room: code, payload: games[code].currentTurn });
     this.server.to(code).emit('turn', games[code].currentTurn);
+    
+    // Mettre à jour la base de données
+    await this.gameService.updateGameStatus(code, 'waiting', playerCount);
     
     // Message système pour l'arrivée d'un joueur
     const playerName = color === 'white' ? 'Blanc' : 'Noir';

@@ -3,6 +3,7 @@ import { useEffect, useState } from 'react'
 import { io } from 'socket.io-client'
 import Game from '@/components/game/Game'
 import AudioControls from '@/components/AudioControls'
+import ShareButton from '@/components/ShareButton'
 import Link from 'next/link'
 
 const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001')
@@ -209,7 +210,7 @@ export default function Home() {
                     {code}
                   </span>
                 </div>
-                <div className="text-slate-400">
+                <div className="text-slate-400 mb-4">
                   {players < 2 ? (
                     <div className="flex items-center justify-center space-x-2">
                       <div className="animate-spin w-4 h-4 border-2 border-slate-500 border-t-transparent rounded-full"></div>
@@ -221,6 +222,9 @@ export default function Home() {
                     </div>
                   )}
                 </div>
+                
+                {/* Bouton de partage d'URL */}
+                <ShareButton gameCode={code} />
               </div>
             </div>
 

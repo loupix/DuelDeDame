@@ -3,6 +3,7 @@ import { ConfigModule } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { GameGateway } from './game.gateway';
 import { ChatModule } from './chat/chat.module';
+import { GameModule } from './game/game.module';
 
 @Module({
   imports: [
@@ -15,6 +16,7 @@ import { ChatModule } from './chat/chat.module';
       synchronize: true,
     }),
     ChatModule,
+    GameModule,
   ],
   providers: [GameGateway],
 })
