@@ -31,4 +31,6 @@ export abstract class Piece {
   }
 
   public abstract getValidMoves(board: any): Position[]
+  
+  public abstract getType(): string
 } 

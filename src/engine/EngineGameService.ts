@@ -91,10 +91,11 @@ export class EngineGameService {
     this.setupGame()
   }
 
-  public isGameOver(): boolean {
+  public async isGameOver(): Promise<boolean> {
     // Vérifier si l'engine peut jouer
     if (this.isEngineTurn) {
-      return this.enginePlayer.makeMove(this.game).then(move => move === null)
+      const move = await this.enginePlayer.makeMove(this.game)
+      return move === null
     }
     
     // Vérifier si l'humain peut jouer

@@ -10,4 +10,8 @@ export class Queen extends Piece {
   public getValidMoves(board: Board): Position[] {
     return this.moveStrategy.getValidMoves(this, board)
   }
+
+  public getType(): string {
+    return 'queen'
+  }
 } 
