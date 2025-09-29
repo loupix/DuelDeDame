@@ -23,6 +23,7 @@ export default function GamePage() {
   const [colorMap, setColorMap] = useState<Record<string, 'white' | 'black'>>({})
   const [audioMenuOpen, setAudioMenuOpen] = useState(false)
   const [isValidating, setIsValidating] = useState(true)
+  const [isCreating, setIsCreating] = useState(false)
   const [gameLink, setGameLink] = useState('')
   const [gameApiService] = useState(() => GameApiService.getInstance())
   const [gameState, setGameState] = useState<GameState | null>(null)
@@ -65,7 +66,23 @@ export default function GamePage() {
         if (apiResponse.success && apiResponse.game) {
           setGameState(apiResponse.game)
           
-          // Vérifier si le joueur a déjà rejoint cette partie
+          // Vérifier si le joueur est déjà dans la partie côté API
+          const game = apiResponse.game
+          const isPlayerInGame = game.whitePlayerId === clientId || game.blackPlayerId === clientId
+          
+          if (isPlayerInGame) {
+            // Le joueur est déjà dans la partie, se connecter via WebSocket
+            const color = game.whitePlayerId === clientId ? 'white' : 'black'
+            setColor(color)
+            setJoined(true)
+            console.log('[WS][client][emit][join]', { code, clientId })
+            socket.emit('join', { code, clientId })
+            console.log('[WS][client][emit][ready]', { code })
+            socket.emit('ready', code)
+            return
+          }
+          
+          // Vérifier si le joueur a déjà rejoint cette partie (fallback pour compatibilité)
           const storedColors = localStorage.getItem('colorMap')
           if (storedColors) {
             try {
@@ -96,6 +113,7 @@ export default function GamePage() {
           }
         } else {
           // La partie n'existe pas, essayer de la créer
+          setIsCreating(true)
           const createResponse = await gameApiService.createGame(code, clientId)
           if (createResponse.success && createResponse.game) {
             setGameState(createResponse.game)
@@ -106,6 +124,7 @@ export default function GamePage() {
           } else {
             setError(createResponse.error || 'Impossible de créer la partie')
           }
+          setIsCreating(false)
         }
       } catch (error) {
         console.error('Erreur lors de l\'initialisation de la partie:', error)
@@ -183,6 +202,18 @@ export default function GamePage() {
         <div className="text-center">
           <div className="animate-spin w-8 h-8 border-2 border-slate-500 border-t-transparent rounded-full mx-auto mb-4"></div>
           <div className="text-slate-300">Vérification de la partie...</div>
+        </div>
+      </div>
+    )
+  }
+
+  if (isCreating) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin w-8 h-8 border-2 border-slate-500 border-t-transparent rounded-full mx-auto mb-4"></div>
+          <div className="text-slate-300">Création de la partie...</div>
+          <div className="text-slate-500 text-sm mt-2">Code: {code}</div>
         </div>
       </div>
     )

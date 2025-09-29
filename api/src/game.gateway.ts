@@ -9,6 +9,7 @@ import {
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { ChatService } from './chat/chat.service';
+import { GameService } from './game/game.service';
 
 type Player = { socketId: string; clientId: string; color: 'white' | 'black' };
 type Game = { players: Player[]; currentTurn: 'white' | 'black' };
@@ -16,7 +17,10 @@ const games: Record<string, Game> = {};
 
 @WebSocketGateway({ cors: { origin: '*' }, namespace: '/' })
 export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
-  constructor(private readonly chatService: ChatService) {}
+  constructor(
+    private readonly chatService: ChatService,
+    private readonly gameService: GameService
+  ) {}
   @WebSocketServer()
   server: Server;
 
@@ -37,47 +41,145 @@ export class GameGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   @SubscribeMessage('join')
-  handleJoin(@MessageBody() payload: { code: string; clientId?: string } | string, @ConnectedSocket() socket: Socket) {
-    const code = typeof payload === 'string' ? payload : payload.code;
+  async handleJoin(@MessageBody() payload: { code: string; clientId?: string } | string, @ConnectedSocket() socket: Socket) {
+    let code = typeof payload === 'string' ? payload : payload.code;
     const clientId = typeof payload === 'string' ? '' : (payload.clientId || '');
-    // console.log('[WS][recv][join]', { code, socketId: socket.id, clientId });
-    if (!games[code]) games[code] = { players: [], currentTurn: 'white' };
-    // Si clientId correspond à un joueur existant, réattribuer son socket et sa couleur
-    if (clientId) {
-      const existing = games[code].players.find(p => p.clientId === clientId);
-      if (existing) {
-        // Réattribuer le socket pour ce clientId
-        existing.socketId = socket.id;
-        socket.join(code);
-        // console.log('[WS][emit][joined]', { to: socket.id, payload: { code, color: existing.color } });
-        socket.emit('joined', { code, color: existing.color });
-        this.server.to(code).emit('players', games[code].players.filter(p => p.socketId).length);
-        // console.log('[WS][emit][turn]', { room: code, payload: games[code].currentTurn });
-        this.server.to(code).emit('turn', games[code].currentTurn);
+    
+    try {
+      // Vérifier l'état de la partie via l'API
+      let gameState = await this.gameService.getGameByCode(code);
+      
+      if (!gameState) {
+        // La partie n'existe pas, essayer de la créer
+        if (clientId) {
+          // Si le code est vide, laisser l'API générer un code unique
+          const createDto = code && code.trim() ? { code, playerId: clientId } : { playerId: clientId };
+          const createdGame = await this.gameService.create(createDto);
+          // Mettre à jour le code avec celui généré par l'API
+          if (createdGame.code !== code) {
+            code = createdGame.code;
+          }
+          // Récupérer l'état de la partie créée
+          gameState = createdGame;
+        } else {
+          socket.emit('error', { message: 'Partie non trouvée' });
+          return;
+        }
+      } else {
+        // La partie existe, essayer de rejoindre
+        if (clientId) {
+          try {
+            const joinResult = await this.gameService.joinGame({ code, playerId: clientId });
+            // Mettre à jour l'état de la partie après le join
+            gameState = joinResult;
+          } catch (error) {
+            if (error.message === 'Partie pleine') {
+              socket.emit('full');
+              return;
+            }
+            socket.emit('error', { message: error.message });
+            return;
+          }
+        }
+      }
+      
+      // Synchroniser avec le système WebSocket local
+      if (!games[code]) {
+        games[code] = { players: [], currentTurn: 'white' };
+      }
+      
+      // Synchroniser les joueurs avec l'état de la base de données
+      const dbPlayerCount = (gameState.whitePlayerId ? 1 : 0) + (gameState.blackPlayerId ? 1 : 0);
+      
+      // Synchroniser le système WebSocket avec la base de données
+      const existingPlayers = games[code].players;
+      const dbPlayers = [];
+      
+      // Ajouter le joueur blanc s'il existe
+      if (gameState.whitePlayerId) {
+        const existingWhite = existingPlayers.find(p => p.clientId === gameState.whitePlayerId);
+        if (existingWhite) {
+          dbPlayers.push(existingWhite);
+        } else {
+          dbPlayers.push({ socketId: null, clientId: gameState.whitePlayerId, color: 'white' });
+        }
+      }
+      
+      // Ajouter le joueur noir s'il existe
+      if (gameState.blackPlayerId) {
+        const existingBlack = existingPlayers.find(p => p.clientId === gameState.blackPlayerId);
+        if (existingBlack) {
+          dbPlayers.push(existingBlack);
+        } else {
+          dbPlayers.push({ socketId: null, clientId: gameState.blackPlayerId, color: 'black' });
+        }
+      }
+      
+      // Mettre à jour le système WebSocket local
+      games[code].players = dbPlayers;
+      
+      // Si clientId correspond à un joueur existant, réattribuer son socket et sa couleur
+      if (clientId) {
+        const existing = games[code].players.find(p => p.clientId === clientId);
+        if (existing) {
+          existing.socketId = socket.id;
+          socket.join(code);
+          socket.emit('joined', { code, color: existing.color });
+          this.server.to(code).emit('players', games[code].players.filter(p => p.socketId).length);
+          this.server.to(code).emit('turn', games[code].currentTurn);
+          return;
+        }
+      }
+      
+      // Vérifier si la partie est pleine côté base de données
+      console.log(`[Gateway] Code: ${code}, DB Players: ${dbPlayerCount}, WS Players: ${games[code].players.length}`);
+      console.log(`[Gateway] White: ${gameState.whitePlayerId}, Black: ${gameState.blackPlayerId}`);
+      
+      if (dbPlayerCount >= 2) {
+        console.log(`[Gateway] Partie pleine côté DB, émission 'full'`);
+        socket.emit('full');
         return;
       }
+      
+      // Déterminer la couleur basée sur l'état de la base de données
+      let color: 'white' | 'black';
+      if (!gameState.whitePlayerId) {
+        color = 'white';
+      } else if (!gameState.blackPlayerId) {
+        color = 'black';
+      } else {
+        // Fallback: utiliser les couleurs déjà prises dans WebSocket
+        const takenColors = new Set(games[code].players.map(p => p.color));
+        color = takenColors.has('white') ? 'black' : 'white';
+      }
+      
+      // Ajouter le nouveau joueur au système WebSocket local seulement s'il n'est pas déjà dans la partie
+      const isAlreadyInGame = games[code].players.some(p => p.clientId === clientId);
+      if (!isAlreadyInGame) {
+        games[code].players.push({ socketId: socket.id, clientId: clientId || socket.id, color });
+      } else {
+        // Mettre à jour le socket du joueur existant
+        const existingPlayer = games[code].players.find(p => p.clientId === clientId);
+        if (existingPlayer) {
+          existingPlayer.socketId = socket.id;
+        }
+      }
+      
+      socket.join(code);
+      socket.emit('joined', { code, color });
+      this.server.to(code).emit('players', games[code].players.filter(p => p.socketId).length);
+      this.server.to(code).emit('turn', games[code].currentTurn);
+      
+      // Message système pour l'arrivée d'un joueur
+      const playerName = color === 'white' ? 'Blanc' : 'Noir';
+      this.server.to(code).emit('systemMessage', { 
+        message: `${playerName} a rejoint la partie` 
+      });
+      
+    } catch (error) {
+      console.error('Erreur lors de la connexion à la partie:', error);
+      socket.emit('error', { message: 'Erreur de connexion' });
     }
-    if (games[code].players.filter(p => p.socketId).length >= 2) {
-      // console.log('[WS][emit][full]', { to: socket.id });
-      socket.emit('full');
-      return;
-    }
-    const takenColors = new Set(games[code].players.map(p => p.color));
-    const color: 'white' | 'black' = takenColors.has('white') ? 'black' : 'white';
-    games[code].players.push({ socketId: socket.id, clientId: clientId || socket.id, color });
-    socket.join(code);
-    socket.emit('joined', { code, color });
-    // console.log('[WS][emit][players]', { room: code, payload: games[code].players.filter(p => p.socketId).length });
-    this.server.to(code).emit('players', games[code].players.filter(p => p.socketId).length);
-    // informer du tour courant
-    // console.log('[WS][emit][turn]', { room: code, payload: games[code].currentTurn });
-    this.server.to(code).emit('turn', games[code].currentTurn);
-    
-    // Message système pour l'arrivée d'un joueur
-    const playerName = color === 'white' ? 'Blanc' : 'Noir';
-    this.server.to(code).emit('systemMessage', { 
-      message: `${playerName} a rejoint la partie` 
-    });
   }
 
   @SubscribeMessage('ready')

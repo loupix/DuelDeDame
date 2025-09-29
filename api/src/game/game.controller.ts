@@ -6,7 +6,7 @@ export class GameController {
   constructor(private readonly gameService: GameService) {}
 
   @Post('create')
-  async createGame(@Body() body: { code: string; playerId: string }) {
+  async createGame(@Body() body: { code?: string; playerId: string }) {
     try {
       const game = await this.gameService.create(body);
       return {

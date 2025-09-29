@@ -10,23 +10,40 @@ export class QueenMoveStrategy implements MoveStrategy {
     // Vérifier si le mouvement est en diagonale
     if (Math.abs(toRow - fromRow) !== Math.abs(toCol - fromCol)) return false
 
-    // Vérifier si le chemin est libre
-    const rowStep = toRow > fromRow ? 1 : -1
-    const colStep = toCol > fromCol ? 1 : -1
-    let currentRow = fromRow + rowStep
-    let currentCol = fromCol + colStep
-
-    while (currentRow !== toRow && currentCol !== toCol) {
-      if (board.getPiece([currentRow, currentCol])) return false
-      currentRow += rowStep
-      currentCol += colStep
-    }
-
     // Vérifier si la case de destination est vide ou contient une pièce adverse
     const targetPiece = board.getPiece(to)
     if (targetPiece && targetPiece.getColor() === piece.getColor()) return false
 
-    return true
+    // Vérifier le chemin pour les prises
+    const rowStep = toRow > fromRow ? 1 : -1
+    const colStep = toCol > fromCol ? 1 : -1
+    let currentRow = fromRow + rowStep
+    let currentCol = fromCol + colStep
+    let piecesInPath = 0
+    let lastPiecePosition: Position | null = null
+
+    while (currentRow !== toRow && currentCol !== toCol) {
+      const pieceInPath = board.getPiece([currentRow, currentCol])
+      if (pieceInPath) {
+        piecesInPath++
+        lastPiecePosition = [currentRow, currentCol]
+      }
+      currentRow += rowStep
+      currentCol += colStep
+    }
+
+    // Si c'est une prise (case de destination occupée par un adversaire)
+    if (targetPiece && targetPiece.getColor() !== piece.getColor()) {
+      // Pour une prise, il ne doit y avoir qu'une seule pièce adverse sur le chemin
+      if (piecesInPath === 1 && lastPiecePosition) {
+        const pieceToCapture = board.getPiece(lastPiecePosition)
+        return pieceToCapture ? pieceToCapture.getColor() !== piece.getColor() : false
+      }
+      return false
+    }
+
+    // Pour un mouvement simple, le chemin doit être libre
+    return piecesInPath === 0
   }
 
   getValidMoves(piece: Piece, board: Board): Position[] {

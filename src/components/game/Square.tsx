@@ -70,11 +70,17 @@ function GamingPiece({ piece }: { piece: Piece }) {
             : 'bg-gradient-to-br from-slate-600 to-transparent'
         } opacity-60`}></div>
         
-        {/* Indicateur de type de pion */}
+        {/* Icône de la dame */}
         {pieceType === 'queen' && (
-          <div className={`absolute top-1 right-1 w-2 h-2 rounded-full ${
-            isWhite ? 'bg-yellow-400' : 'bg-yellow-600'
-          } shadow-sm`}></div>
+          <div className="absolute inset-0 flex items-center justify-center">
+            <svg 
+              className={`w-6 h-6 ${isWhite ? 'text-yellow-500' : 'text-yellow-400'}`} 
+              fill="currentColor" 
+              viewBox="0 0 24 24"
+            >
+              <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>
+            </svg>
+          </div>
         )}
         
         {/* Effet de brillance */}

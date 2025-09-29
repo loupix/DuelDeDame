@@ -1,8 +1,11 @@
 import { MoveStrategy } from './MoveStrategy'
 import { Piece, Position } from '@/models/Piece'
 import { Board } from '@/models/Board'
+import { MultipleCaptureStrategy } from './MultipleCaptureStrategy'
 
 export class PawnMoveStrategy implements MoveStrategy {
+  private multipleCaptureStrategy = new MultipleCaptureStrategy()
+
   canMove(piece: Piece, to: Position, board: Board): boolean {
     const [fromRow, fromCol] = piece.getPosition()
     const [toRow, toCol] = to
@@ -50,37 +53,7 @@ export class PawnMoveStrategy implements MoveStrategy {
   }
 
   getValidMoves(piece: Piece, board: Board): Position[] {
-    const [row, col] = piece.getPosition()
-    const color = piece.getColor()
-    const direction = color === 'white' ? -1 : 1
-    const validMoves: Position[] = []
-
-    // Mouvements simples
-    const simpleMoves: Position[] = [
-      [row + direction, col - 1],
-      [row + direction, col + 1]
-    ]
-
-    // Mouvements de capture
-    const captureMoves: Position[] = [
-      [row + direction * 2, col - 2],
-      [row + direction * 2, col + 2]
-    ]
-
-    // Vérifier les mouvements simples
-    for (const move of simpleMoves) {
-      if (this.canMove(piece, move, board)) {
-        validMoves.push(move)
-      }
-    }
-
-    // Vérifier les mouvements de capture
-    for (const move of captureMoves) {
-      if (this.canCapture(piece, move, board)) {
-        validMoves.push(move)
-      }
-    }
-
-    return validMoves
+    // Utiliser la stratégie de prises multiples pour prioriser les captures
+    return this.multipleCaptureStrategy.getValidMovesWithPriority(piece, board)
   }
 } 

@@ -88,4 +88,43 @@ export class Board {
   public getSize(): number {
     return this.size
   }
+
+  public clone(): Board {
+    const newBoard = new Board()
+    // Vider la grille du nouveau plateau
+    for (let row = 0; row < this.size; row++) {
+      for (let col = 0; col < this.size; col++) {
+        newBoard.grid[row][col] = null
+      }
+    }
+    
+    // Copier toutes les pièces
+    for (let row = 0; row < this.size; row++) {
+      for (let col = 0; col < this.size; col++) {
+        const piece = this.grid[row][col]
+        if (piece) {
+          const pieceType = piece.constructor.name.toLowerCase() as 'pawn' | 'queen'
+          const color = piece.getColor()
+          const position = piece.getPosition()
+          newBoard.grid[row][col] = PieceFactory.createPiece(pieceType, color, position)
+        }
+      }
+    }
+    
+    return newBoard
+  }
+
+  public removePiece(position: [number, number]): void {
+    const [row, col] = position
+    if (row >= 0 && row < this.size && col >= 0 && col < this.size) {
+      this.grid[row][col] = null
+    }
+  }
+
+  public setPiece(position: [number, number], piece: Piece): void {
+    const [row, col] = position
+    if (row >= 0 && row < this.size && col >= 0 && col < this.size) {
+      this.grid[row][col] = piece
+    }
+  }
 } 

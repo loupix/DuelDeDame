@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import Link from 'next/link'
 import { SessionService } from '@/services/SessionService'
+import { GameApiService } from '@/services/GameApiService'
 import { findFlagUrlByIso2Code } from 'country-flags-svg-v2'
 
 // Composant pour afficher le drapeau du pays
@@ -28,9 +29,10 @@ const CountryFlag = ({ countryCode }: { countryCode: string }) => {
 
 export default function Navbar() {
   const sessionService = SessionService.getInstance()
+  const gameApiService = GameApiService.getInstance()
   const [identity, setIdentity] = useState<{ identity: string; firstName: string; lastName: string; avatarColor: string; countryCode: string; language: string; timezone: string } | null>(null)
   const [open, setOpen] = useState(false)
-  const [matches, setMatches] = useState<Array<{ id: string; code: string; result: 'win'|'loss'|'draw'; color: 'white'|'black'; duration: number; moves: number; createdAt: string }>>([])
+  const [activeGames, setActiveGames] = useState<Array<{ id: string; code: string; status: 'waiting' | 'active' | 'finished'; currentTurn?: 'white' | 'black'; whitePlayerId?: string; blackPlayerId?: string; moveCount: number; createdAt: string; updatedAt: string }>>([])
 
   useEffect(() => {
     const obj = sessionService.getOrCreateIdentity()
@@ -38,10 +40,30 @@ export default function Navbar() {
     setIdentity(obj)
   }, [])
 
-  useEffect(() => {
+  const fetchActiveGames = () => {
     if (!identity) return
-    sessionService.listMatches(identity.identity).then(setMatches).catch(() => {})
-  }, [identity])
+    console.log('Navbar - Fetching active games for:', identity.identity)
+    gameApiService.getActiveGamesByPlayer(identity.identity).then(response => {
+      console.log('Navbar - Active games response:', response)
+      if (response.success && response.games) {
+        setActiveGames(response.games)
+      } else {
+        console.log('Navbar - No active games or error:', response.error)
+      }
+    }).catch(error => {
+      console.error('Navbar - Error fetching active games:', error)
+    })
+  }
+
+  useEffect(() => {
+    fetchActiveGames()
+  }, [identity, gameApiService])
+
+  // Rafraîchir les parties toutes les 5 secondes
+  useEffect(() => {
+    const interval = setInterval(fetchActiveGames, 5000)
+    return () => clearInterval(interval)
+  }, [identity, gameApiService])
 
   return (
     <div className="sticky top-0 z-20 bg-slate-900 text-slate-100 border-b border-slate-800">
@@ -99,29 +121,59 @@ export default function Navbar() {
                   </div>
                 </div>
                 
-                {/* Section des matchs */}
+                {/* Section des parties actives */}
                 <div className="p-2 max-h-64 overflow-auto">
-                  <div className="px-2 py-1 text-xs text-slate-300 font-medium">Vos derniers matchs</div>
+                  <div className="px-2 py-1 text-xs text-slate-300 font-medium">Vos parties en cours</div>
                   <div className="divide-y divide-slate-700">
-                  {matches.length === 0 && (
-                    <div className="px-3 py-3 text-sm text-slate-400">Aucun match enregistré</div>
-                  )}
-                  {matches.map(m => (
-                    <div key={m.id} className="px-3 py-2 text-sm flex items-center justify-between">
-                      <div>
-                        <div className="font-medium">{m.result === 'win' ? 'Victoire' : m.result === 'loss' ? 'Défaite' : 'Égalité'} • {m.color === 'white' ? 'Blanc' : 'Noir'}</div>
-                        <div className="text-slate-400 text-xs">{new Date(m.createdAt).toLocaleString('fr-FR')} • {m.moves} coups • {m.duration}s</div>
+                  {activeGames.length === 0 && (
+                    <div className="px-3 py-3 text-sm text-slate-400">
+                      Aucune partie en cours
+                      <div className="text-xs text-slate-500 mt-1">
+                        Créez une partie pour la voir apparaître ici
                       </div>
-                      <div className="text-xs text-slate-400">{m.code}</div>
                     </div>
-                  ))}
+                  )}
+                  {activeGames.map(game => {
+                    const playerColor = game.whitePlayerId === identity?.identity ? 'white' : 'black'
+                    const isMyTurn = game.currentTurn === playerColor
+                    return (
+                      <div key={game.id} className="px-3 py-2 text-sm">
+                        <div className="flex items-center justify-between mb-1">
+                          <div className="font-medium text-slate-200">{game.code}</div>
+                          <div className={`text-xs px-2 py-1 rounded ${
+                            game.status === 'waiting' ? 'bg-yellow-900/30 text-yellow-400' :
+                            game.status === 'active' ? 'bg-green-900/30 text-green-400' :
+                            'bg-gray-900/30 text-gray-400'
+                          }`}>
+                            {game.status === 'waiting' ? 'En attente' :
+                             game.status === 'active' ? (isMyTurn ? 'À toi' : 'En cours') :
+                             'Terminée'}
+                          </div>
+                        </div>
+                        <div className="text-slate-400 text-xs">
+                          {playerColor === 'white' ? 'Blancs' : 'Noirs'} • {game.moveCount} coups
+                        </div>
+                        <div className="text-slate-500 text-xs">
+                          {new Date(game.updatedAt).toLocaleString('fr-FR')}
+                        </div>
+                        {game.status !== 'finished' && (
+                          <Link 
+                            href={`/game/${game.code}`}
+                            className="inline-block mt-1 text-xs text-blue-400 hover:text-blue-300"
+                            onClick={() => setOpen(false)}
+                          >
+                            Reprendre →
+                          </Link>
+                        )}
+                      </div>
+                    )
+                  })}
                   </div>
                 </div>
                 </div>
               </>
             )}
           </div>
-          <Link href="/profile" className="text-sm text-slate-300 hover:text-white">Profil</Link>
           <Link href="/replays" className="text-sm text-slate-300 hover:text-white">Replays</Link>
         </div>
         <div className="flex items-center gap-4">
