@@ -20,23 +20,29 @@ export class SessionService {
     clientIp?: string
   ): Promise<SessionEntity> {
     let session = await this.repo.findOne({ where: { identity } });
+    // Prépare les données (avec enrichissement éventuel)
+    let geoData: GeoData = {};
+    if (clientIp) {
+      try { geoData = await this.geoipService.getGeoData(clientIp); } catch {}
+    }
+    const data: Partial<SessionEntity> = {
+      identity,
+      firstName: firstName || null,
+      lastName: lastName || null,
+      avatarColor: extras?.avatarColor || null,
+      countryCode: extras?.countryCode || geoData.countryCode || null,
+      language: extras?.language || geoData.language || null,
+      timezone: extras?.timezone || geoData.timezone || null,
+    };
+
+    // Upsert pour éviter les collisions concurrentes sur la contrainte UNIQUE(identity)
+    await this.repo.upsert(data as SessionEntity, ['identity']);
+
+    // Met à jour les champs éventuellement manquants si la session existait déjà
+    session = await this.repo.findOne({ where: { identity } });
     if (!session) {
-      // Enrichir avec géolocalisation IP si disponible
-      let geoData: GeoData = {};
-      if (clientIp) {
-        geoData = await this.geoipService.getGeoData(clientIp);
-      }
-      
-      session = this.repo.create({
-        identity,
-        firstName: firstName || null,
-        lastName: lastName || null,
-        avatarColor: extras?.avatarColor || null,
-        countryCode: extras?.countryCode || geoData.countryCode || null,
-        language: extras?.language || geoData.language || null,
-        timezone: extras?.timezone || geoData.timezone || null,
-      });
-      session = await this.repo.save(session);
+      // cas improbable, mais on re-lance une création simple
+      session = await this.repo.save(this.repo.create(data));
     } else {
       let changed = false;
       if (firstName && session.firstName !== firstName) { session.firstName = firstName; changed = true; }

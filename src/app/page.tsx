@@ -5,9 +5,33 @@ import Game from '@/components/game/Game'
 import AudioControls from '@/components/AudioControls'
 import Link from 'next/link'
 
-const socket = io(process.env.NEXT_PUBLIC_SOCKET_URL || 'http://localhost:3001')
+const socketBase = ((): string => {
+  if (process.env.NEXT_PUBLIC_SOCKET_URL) return process.env.NEXT_PUBLIC_SOCKET_URL
+  if (typeof window !== 'undefined' && window.location) {
+    return `http://${window.location.hostname}:3001`
+  }
+  return 'http://localhost:3001'
+})()
+const socket = io(socketBase)
 
 export default function Home() {
+  const safeRandomUUID = (): string => {
+    try {
+      if (typeof crypto !== 'undefined' && (crypto as any).randomUUID) {
+        return (crypto as any).randomUUID()
+      }
+      if (typeof crypto !== 'undefined' && (crypto as any).getRandomValues) {
+        const bytes = new Uint8Array(16)
+        ;(crypto as any).getRandomValues(bytes)
+        bytes[6] = (bytes[6] & 0x0f) | 0x40
+        bytes[8] = (bytes[8] & 0x3f) | 0x80
+        const toHex = (b: number) => b.toString(16).padStart(2, '0')
+        const hex = Array.from(bytes, toHex).join('')
+        return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`
+      }
+    } catch {}
+    return 'u_' + Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 10)
+  }
   const [code, setCode] = useState('')
   const [joined, setJoined] = useState(false)
   const [players, setPlayers] = useState(1)
@@ -23,7 +47,7 @@ export default function Home() {
     if (stored) {
       setClientId(stored)
     } else {
-      const cid = crypto.randomUUID()
+      const cid = safeRandomUUID()
       localStorage.setItem('clientId', cid)
       setClientId(cid)
     }

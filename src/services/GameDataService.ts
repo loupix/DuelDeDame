@@ -246,7 +246,12 @@ export class GameDataService {
           }
         } catch {}
       }
-      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+      let apiBase = process.env.NEXT_PUBLIC_API_URL || ''
+      if (!apiBase && typeof window !== 'undefined' && window.location) {
+        const host = window.location.hostname
+        apiBase = `http://${host}:3001`
+      }
+      if (!apiBase) apiBase = 'http://localhost:3001'
       if (identity) {
         fetch(`${apiBase}/matches`, {
           method: 'POST',

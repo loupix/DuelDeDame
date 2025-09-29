@@ -1,0 +1,19 @@
+services:
+  web:
+    image: ghcr.io/loupix/duel-de-dame:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    pull_policy: never
+    environment:
+      - NODE_ENV=production
+      - NEST_PORT=3001
+      - NEXT_PUBLIC_API_URL=http://localhost:3001
+    ports:
+      - "3000:3000"
+      - "3001:3001"
+    volumes:
+      - db_data:/app/api/data
+    restart: unless-stopped
+volumes:
+  db_data:

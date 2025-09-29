@@ -5,7 +5,15 @@ export class SessionService {
   private apiBase: string
 
   private constructor() {
-    this.apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001'
+    // Si NEXT_PUBLIC_API_URL n'est pas défini, on déduit l'URL à partir de l'hôte courant (public par défaut)
+    if (process.env.NEXT_PUBLIC_API_URL) {
+      this.apiBase = process.env.NEXT_PUBLIC_API_URL
+    } else if (typeof window !== 'undefined' && window.location) {
+      const host = window.location.hostname
+      this.apiBase = `http://${host}:3001`
+    } else {
+      this.apiBase = 'http://localhost:3001'
+    }
   }
 
   static getInstance(): SessionService {
@@ -52,12 +60,27 @@ export class SessionService {
   }
 
   private randomFirstName(): string {
-    const list = ['Alex', 'Sam', 'Léa', 'Noa', 'Maya', 'Nina', 'Léo', 'Eli', 'Milo', 'Zoe']
+    const list = [
+      'Alex','Sam','Léa','Noa','Maya','Nina','Léo','Eli','Milo','Zoe',
+      'Lucas','Hugo','Louis','Adam','Arthur','Jules','Maël','Nathan','Gabriel','Théo',
+      'Chloé','Emma','Lina','Manon','Inès','Camille','Louna','Jade','Zoé','Ambre',
+      'Enzo','Ethan','Tom','Sacha','Raphaël','Noé','Maxime','Axel','Paul','Timéo',
+      'Sarah','Eva','Alice','Jeanne','Mila','Léonie','Lucie','Charlie','Lila','Romy',
+      'Yanis','Imran','Ilyes','Kylian','Rayan','Mehdi','Adem','Youssef','Ismaël','Yohan',
+      'Noémie','Maëlys','Anaïs','Eléna','Adèle','Louise','Ava','Élise','Lison','Agathe'
+    ]
     return list[Math.floor(Math.random() * list.length)]
   }
 
   private randomLastName(): string {
-    const list = ['Martin', 'Durand', 'Bernard', 'Petit', 'Robert', 'Richard', 'Garcia', 'Leroy', 'Moreau', 'Simon']
+    const list = [
+      'Martin','Bernard','Thomas','Petit','Robert','Richard','Durand','Dubois','Moreau','Laurent',
+      'Simon','Michel','Lefebvre','Leroy','Roux','David','Bertrand','Morel','Fournier','Girard',
+      'Bonnet','Dupont','Lambert','Fontaine','Rousseau','Vincent','Muller','Lefèvre','Faure','Andre',
+      'Mercier','Blanc','Guerin','Boyer','Garnier','Chevalier','Francois','Legrand','Gauthier','Garcia',
+      'Perrin','Robin','Clement','Morin','Nicolas','Henry','Roussel','Mathieu','Gautier','Masson',
+      'Marchand','Duval','Denis','Dumas','Joly','Noel','Meyer','Lucas','Lacroix','Renard'
+    ]
     return list[Math.floor(Math.random() * list.length)]
   }
 
